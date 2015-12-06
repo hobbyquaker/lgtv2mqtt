@@ -1,0 +1,37 @@
+{
+  "name": "lgtv2mqtt",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Interface between LG WebOS Smart TVs and MQTT",
+  "main": "index.js",
+  "preferGlobal": true,
+  "bin": "./index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hobbyquaker/lgtv2mqtt"
+  },
+  "keywords": [
+    "mqtt",
+    "home",
+    "LG",
+    "smart",
+    "TV",
+    "remote",
+    "WebOS"
+  ],
+  "author": "Sebastian Raff <hq@ccu.io> (https://hobbyquaker.github.io)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hobbyquaker/lgtv2mqtt/issues"
+  },
+  "homepage": "https://github.com/hobbyquaker/lgtv2mqtt",
+  "dependencies": {
+    "lgtv2": "^1.0.0",
+    "mqtt": "^1.5.0",
+    "yalm": "^2.0.0",
+    "yargs": "^3.29.0"
+  }
+}
