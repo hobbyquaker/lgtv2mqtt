@@ -1,5 +1,8 @@
 # lgtv2mqtt
 
+[![NPM version](https://badge.fury.io/js/lgtv2mqtt.svg)](http://badge.fury.io/js/lgtv2mqtt)
+[![License][mit-badge]][mit-url]
+
 > Interface between LG WebOS Smart TVs and MQTT
 
 ### Getting started
@@ -63,4 +66,8 @@ channelNumber, underneath 'lgtv' you will find more properties with detailed inf
 
 MIT © [Sebastian Raff](https://github.com/hobbyquaker)
 
+
+
+[mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg?style=flat
+[mit-url]: LICENSE
 
