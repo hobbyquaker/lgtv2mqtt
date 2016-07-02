@@ -14,13 +14,13 @@ log.setLevel(config.verbosity);
 log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.info('mqtt trying to connect', config.url);
 
-var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0'}});
+var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
 mqtt.on('connect', function () {
     mqttConnected = true;
 
     log.info('mqtt connected', config.url);
-    mqtt.publish(config.name + '/connected', tvConnected ? '2' : '1');
+    mqtt.publish(config.name + '/connected', tvConnected ? '2' : '1', {retain: true});
 
     log.info('mqtt subscribe', config.name + '/set/#');
     mqtt.subscribe(config.name + '/set/#');
@@ -88,7 +88,7 @@ lgtv.on('connect', function () {
     lastError = null;
     tvConnected = true;
     log.info('tv connected');
-    mqtt.publish(config.name + '/connected', '2');
+    mqtt.publish(config.name + '/connected', '2', {retain: true});
 
 
     lgtv.subscribe('ssap://audio/getVolume', function (err, res) {
@@ -118,15 +118,9 @@ lgtv.on('connect', function () {
     });
 
 
+
+
     /*
-    lgtv.subscribe('ssap://com.webos.service.appstatus/getAppStatus', function (err, res) {
-        console.log('getAppStatus', err, res);
-    });
-
-    lgtv.subscribe('ssap://system.launcher/getAppState', function (err, res) {
-        console.log('ssap://system.launcher/getAppState', err, res);
-    });
-
     lgtv.subscribe('ssap://tv/getExternalInputList', function (err, res) {
         console.log('getExternalInputList', err, res);
     });
@@ -136,7 +130,6 @@ lgtv.on('connect', function () {
 
 
 lgtv.on('connecting', function (host) {
-    tvConnected = true;
     log.debug('tv trying to connect', host);
 });
 
@@ -144,7 +137,7 @@ lgtv.on('close', function () {
     lastError = null;
     tvConnected = false;
     log.info('tv disconnected');
-    mqtt.publish(config.name + '/connected', '1');
+    mqtt.publish(config.name + '/connected', '1', {retain: true});
 });
 
 var lastError;
