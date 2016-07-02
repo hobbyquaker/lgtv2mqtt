@@ -69,6 +69,40 @@ mqtt.on('message', function (topic, payload) {
                 case 'launch':
                     lgtv.request('ssap://system.launcher/launch', {id: '' + payload});
                     break;
+
+                case 'move':
+                case 'drag':
+                    // the event type is 'move' for both moves and drags.
+                    sendPointerEvent('move', {
+                        dx:   payload.dx,
+                        dy:   payload.dy,
+                        drag: parts[2] === 'drag' ? 1 : 0
+                    });
+                    break;
+
+                case 'scroll':
+                    sendPointerEvent('scroll', {
+                        dx:   payload.dx,
+                        dy:   payload.dy
+                    });
+                    break;
+
+                case 'click':
+                    sendPointerEvent('click');
+                    break;
+
+                case 'button':
+                    /*
+                     * Buttons that are known to work:
+                     *    MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN,
+                     *    CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT
+                     *
+                     * Probably also (but I don't have the facility to test them):
+                     *    CHANNELUP, CHANNELDOWN
+                     */
+                    sendPointerEvent('button', { name: (''+payload).toUpperCase() });
+                    break;
+
                 default:
                     lgtv.request('ssap://' + topic.replace(config.name + '/set/', ''), payload || null);
             }
@@ -149,3 +183,14 @@ lgtv.on('error', function (err) {
     }
     lastError = str;
 });
+
+function sendPointerEvent(type, payload) {
+    lgtv.getSocket(
+        'ssap://com.webos.service.networkinput/getPointerInputSocket',
+        function(err, sock) {
+            if (!err) {
+                sock.send(type, payload);
+            }
+        }
+    );
+}
