@@ -40,6 +40,8 @@ Lauch an app. Send AppId as plain payload string.
 
 #### lgtv/set/media.controls/pause
 
+#### lgtv/set/media.controls/stop
+
 #### lgtv/set/system/turnOff
 
 #### lgtv/set/move lgtv/set/drag
