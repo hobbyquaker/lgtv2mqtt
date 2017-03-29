@@ -48,6 +48,10 @@ Lauch an app. Send AppId as plain payload string.
 
 #### lgtv/set/system/turnOff
 
+#### lgtv/set/com.webos.service.tv.display/set3DOn
+
+#### lgtv/set/com.webos.service.tv.display/set3DOff
+
 #### lgtv/set/move lgtv/set/drag
 
 Send coordinates as JSON with attributes dx and dy of type number
