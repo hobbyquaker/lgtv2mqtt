@@ -62,6 +62,7 @@ Send button as plain string payload
 
 Buttons that are known to work:
 MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT
+channelup, channeldown
                     
 
 ### topics published by lgtv2mqtt
