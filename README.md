@@ -1,9 +1,13 @@
 # lgtv2mqtt
 
 [![NPM version](https://badge.fury.io/js/lgtv2mqtt.svg)](http://badge.fury.io/js/lgtv2mqtt)
+[![Dependency Status](https://img.shields.io/gemnasium/hobbyquaker/lgtv2mqtt.svg?maxAge=2592000)](https://gemnasium.com/github.com/hobbyquaker/lgtv2mqtt)
+[![Build Status](https://travis-ci.org/hobbyquaker/lgtv2mqtt.svg?branch=master)](https://travis-ci.org/hobbyquaker/lgtv2mqtt)
+[![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
 [![License][mit-badge]][mit-url]
 
-> Interface between LG WebOS Smart TVs and MQTT
+> Interface between LG WebOS Smart TVs and MQTT 📺
+
 
 ### Getting started
 
@@ -20,6 +24,7 @@ You need to allow "LG Connect Apps" on your TV - see http://www.lg.com/uk/suppor
 * Start 
 
 ```lgtv2mqtt --help```  
+
 
 ### Topics subscribed by lgtv2mqtt
 
@@ -86,12 +91,10 @@ Reports which App is currently in foreground. (example Payloads: 'netflix', 'com
 Reports current channel if foregroundApp is 'com.webos.app.livetv'. Payload is a JSON String, property val contains the
 channelNumber, underneath 'lgtv' you will find more properties with detailed information.
 
+
 ## License
 
 MIT © [Sebastian Raff](https://github.com/hobbyquaker)
 
-
-
 [mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg?style=flat
 [mit-url]: LICENSE
-

@@ -1,22 +1,27 @@
 #!/usr/bin/env node
 
-var pkg =       require('./package.json');
-var log =       require('yalm');
-var config =    require('./config.js');
-var Mqtt =      require('mqtt');
+const log = require('yalm');
+const Mqtt = require('mqtt');
+const Lgtv = require('lgtv2');
+const config = require('./config.js');
+const pkg = require('./package.json');
 
-
-var mqttConnected;
-var tvConnected;
+let mqttConnected;
+let tvConnected;
+let lastError;
 
 log.setLevel(config.verbosity);
 
 log.info(pkg.name + ' ' + pkg.version + ' starting');
 log.info('mqtt trying to connect', config.url);
 
-var mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
+const mqtt = Mqtt.connect(config.url, {will: {topic: config.name + '/connected', payload: '0', retain: true}});
 
-mqtt.on('connect', function () {
+const lgtv = new Lgtv({
+    url: 'ws://' + config.tv + ':3000'
+});
+
+mqtt.on('connect', () => {
     mqttConnected = true;
 
     log.info('mqtt connected', config.url);
@@ -24,66 +29,67 @@ mqtt.on('connect', function () {
 
     log.info('mqtt subscribe', config.name + '/set/#');
     mqtt.subscribe(config.name + '/set/#');
-
 });
 
-mqtt.on('close', function () {
+mqtt.on('close', () => {
     if (mqttConnected) {
         mqttConnected = false;
         log.info('mqtt closed ' + config.url);
     }
-
 });
 
-mqtt.on('error', function (err) {
+mqtt.on('error', err => {
     log.error('mqtt', err);
-
 });
 
-mqtt.on('message', function (topic, payload) {
-    payload = payload.toString();
+mqtt.on('message', (topic, payload) => {
+    payload = String(payload);
     try {
         payload = JSON.parse(payload);
-    } catch (e) {
+    } catch (err) {
 
     }
+
     log.debug('mqtt <', topic, payload);
 
-    var parts = topic.split('/');
+    const parts = topic.split('/');
 
     switch (parts[1]) {
         case 'set':
-
             switch (parts[2]) {
                 case 'toast':
-                    lgtv.request('ssap://system.notifications/createToast', {message: '' + payload});
+                    lgtv.request('ssap://system.notifications/createToast', {message: String(payload)});
                     break;
                 case 'volume':
                     lgtv.request('ssap://audio/setVolume', {volume: parseInt(payload, 10)} || 0);
                     break;
                 case 'mute':
-                    if (payload === 'true') payload = true;
-                    if (payload === 'false') payload = false;
-                    lgtv.request('ssap://audio/setMute', {mute: !!payload});
+                    if (payload === 'true') {
+                        payload = true;
+                    }
+                    if (payload === 'false') {
+                        payload = false;
+                    }
+                    lgtv.request('ssap://audio/setMute', {mute: Boolean(payload)});
                     break;
                 case 'launch':
-                    lgtv.request('ssap://system.launcher/launch', {id: '' + payload});
+                    lgtv.request('ssap://system.launcher/launch', {id: String(payload)});
                     break;
 
                 case 'move':
                 case 'drag':
-                    // the event type is 'move' for both moves and drags.
+                    // The event type is 'move' for both moves and drags.
                     sendPointerEvent('move', {
-                        dx:   payload.dx,
-                        dy:   payload.dy,
+                        dx: payload.dx,
+                        dy: payload.dy,
                         drag: parts[2] === 'drag' ? 1 : 0
                     });
                     break;
 
                 case 'scroll':
                     sendPointerEvent('scroll', {
-                        dx:   payload.dx,
-                        dy:   payload.dy
+                        dx: payload.dx,
+                        dy: payload.dy
                     });
                     break;
 
@@ -100,47 +106,52 @@ mqtt.on('message', function (topic, payload) {
                      * Probably also (but I don't have the facility to test them):
                      *    CHANNELUP, CHANNELDOWN
                      */
-                    sendPointerEvent('button', { name: (''+payload).toUpperCase() });
+                    sendPointerEvent('button', {name: (String(payload)).toUpperCase()});
                     break;
 
                 default:
                     lgtv.request('ssap://' + topic.replace(config.name + '/set/', ''), payload || null);
             }
+            break;
+        default:
     }
 });
 
-var lgtv = require("lgtv2")({
-    url: 'ws://' + config.tv + ':3000'
-});
-
-lgtv.on('prompt', function () {
+lgtv.on('prompt', () => {
     log.info('authorization required');
 });
 
-lgtv.on('connect', function () {
-    var channelsSubscribed = false;
+lgtv.on('connect', () => {
+    let channelsSubscribed = false;
     lastError = null;
     tvConnected = true;
     log.info('tv connected');
     mqtt.publish(config.name + '/connected', '2', {retain: true});
 
-
-    lgtv.subscribe('ssap://audio/getVolume', function (err, res) {
+    lgtv.subscribe('ssap://audio/getVolume', (err, res) => {
         log.debug('audio/getVolume', err, res);
-        if (res.changed.indexOf('volume') !== -1) mqtt.publish(config.name + '/status/volume', '' + res.volume, {retain: true});
-        if (res.changed.indexOf('muted') !== -1) mqtt.publish(config.name + '/status/mute', res.muted ? '1' : '0', {retain: true});
+        if (res.changed.indexOf('volume') !== -1) {
+            mqtt.publish(config.name + '/status/volume', String(res.volume), {retain: true});
+        }
+        if (res.changed.indexOf('muted') !== -1) {
+            mqtt.publish(config.name + '/status/mute', res.muted ? '1' : '0', {retain: true});
+        }
     });
 
-    lgtv.subscribe('ssap://com.webos.applicationManager/getForegroundAppInfo', function (err, res) {
+    lgtv.subscribe('ssap://com.webos.applicationManager/getForegroundAppInfo', (err, res) => {
         log.debug('getForegroundAppInfo', err, res);
-        mqtt.publish(config.name + '/status/foregroundApp', '' + res.appId, {retain: true});
+        mqtt.publish(config.name + '/status/foregroundApp', String(res.appId), {retain: true});
 
         if (res.appId === 'com.webos.app.livetv') {
             if (!channelsSubscribed) {
                 channelsSubscribed = true;
-                setTimeout(function () {
-                    lgtv.subscribe('ssap://tv/getCurrentChannel', function (err, res) {
-                        var msg = {
+                setTimeout(() => {
+                    lgtv.subscribe('ssap://tv/getCurrentChannel', (err, res) => {
+                        if (err) {
+                            log.error(err);
+                            return;
+                        }
+                        const msg = {
                             val: res.channelNumber,
                             lgtv: res
                         };
@@ -151,35 +162,28 @@ lgtv.on('connect', function () {
         }
     });
 
-
-
-
     /*
     lgtv.subscribe('ssap://tv/getExternalInputList', function (err, res) {
         console.log('getExternalInputList', err, res);
     });
     */
-
 });
 
-
-lgtv.on('connecting', function (host) {
+lgtv.on('connecting', host => {
     log.debug('tv trying to connect', host);
 });
 
-lgtv.on('close', function () {
+lgtv.on('close', () => {
     lastError = null;
     tvConnected = false;
     log.info('tv disconnected');
     mqtt.publish(config.name + '/connected', '1', {retain: true});
 });
 
-var lastError;
-
-lgtv.on('error', function (err) {
-    var str = err.toString();
+lgtv.on('error', err => {
+    const str = String(err);
     if (str !== lastError) {
-        log.error('tv', err.toString());
+        log.error('tv', str);
     }
     lastError = str;
 });
@@ -187,7 +191,7 @@ lgtv.on('error', function (err) {
 function sendPointerEvent(type, payload) {
     lgtv.getSocket(
         'ssap://com.webos.service.networkinput/getPointerInputSocket',
-        function(err, sock) {
+        (err, sock) => {
             if (!err) {
                 sock.send(type, payload);
             }
