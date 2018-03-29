@@ -51,7 +51,17 @@ Lauch an app. Send AppId as plain payload string.
 
 #### lgtv/set/media.controls/pause
 
+#### lgtv/set/media.controls/stop
+
+#### lgtv/set/media.controls/rewind
+
+#### lgtv/set/media.controls/fastForward
+
 #### lgtv/set/system/turnOff
+
+#### lgtv/set/com.webos.service.tv.display/set3DOn
+
+#### lgtv/set/com.webos.service.tv.display/set3DOff
 
 #### lgtv/set/move lgtv/set/drag
 
@@ -70,7 +80,8 @@ Send coordinates as JSON with attributes dx and dy of type number
 Send button as plain string payload
 
 Buttons that are known to work:
-MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT
+MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT,
+channelup, channeldown, record
                     
 
 ### topics published by lgtv2mqtt
