@@ -1,5 +1,6 @@
 # lgtv2mqtt
 
+[![mqtt-smarthome](https://img.shields.io/badge/mqtt-smarthome-blue.svg)](https://github.com/mqtt-smarthome/mqtt-smarthome)
 [![NPM version](https://badge.fury.io/js/lgtv2mqtt.svg)](http://badge.fury.io/js/lgtv2mqtt)
 [![Dependency Status](https://img.shields.io/gemnasium/hobbyquaker/lgtv2mqtt.svg?maxAge=2592000)](https://gemnasium.com/github.com/hobbyquaker/lgtv2mqtt)
 [![Build Status](https://travis-ci.org/hobbyquaker/lgtv2mqtt.svg?branch=master)](https://travis-ci.org/hobbyquaker/lgtv2mqtt)
@@ -50,7 +51,17 @@ Lauch an app. Send AppId as plain payload string.
 
 #### lgtv/set/media.controls/pause
 
+#### lgtv/set/media.controls/stop
+
+#### lgtv/set/media.controls/rewind
+
+#### lgtv/set/media.controls/fastForward
+
 #### lgtv/set/system/turnOff
+
+#### lgtv/set/com.webos.service.tv.display/set3DOn
+
+#### lgtv/set/com.webos.service.tv.display/set3DOff
 
 #### lgtv/set/move lgtv/set/drag
 
@@ -69,7 +80,8 @@ Send coordinates as JSON with attributes dx and dy of type number
 Send button as plain string payload
 
 Buttons that are known to work:
-MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT
+MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT,
+channelup, channeldown, record
                     
 
 ### topics published by lgtv2mqtt
