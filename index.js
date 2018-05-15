@@ -79,7 +79,7 @@ mqtt.on('message', (topic, payload) => {
                 case 'youtube':
                     lgtv.request('ssap://system.launcher/launch', {id: 'youtube.leanback.v4', contentId: String(payload)});
                     break;
-    
+
                 case 'move':
                 case 'drag':
                     // The event type is 'move' for both moves and drags.
