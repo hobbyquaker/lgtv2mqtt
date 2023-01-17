@@ -134,10 +134,10 @@ lgtv.on('connect', () => {
 
     lgtv.subscribe('ssap://audio/getVolume', (err, res) => {
         log.debug('audio/getVolume', err, res);
-        if (res.changed.indexOf('volume') !== -1) {
+        if (res.changed != undefined && res.changed.indexOf('volume') !== -1) {
             mqtt.publish(config.name + '/status/volume', String(res.volume), {retain: true});
         }
-        if (res.changed.indexOf('muted') !== -1) {
+        if (res.changed != undefined && res.changed.indexOf('muted') !== -1) {
             mqtt.publish(config.name + '/status/mute', res.muted ? '1' : '0', {retain: true});
         }
     });
