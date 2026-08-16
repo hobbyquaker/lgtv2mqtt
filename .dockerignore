@@ -8,3 +8,4 @@ node_modules
 eslint.config.js
 test
 scripts
+deploy.sh
