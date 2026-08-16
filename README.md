@@ -91,14 +91,15 @@ Topics and payloads follow the [mqtt-smarthome architecture](https://github.com/
 
 ### Published by lgtv2mqtt
 
-| topic                        | payload                                                                                        |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| `lgtv/connected`             | `0` (lgtv2mqtt down), `1` (MQTT only), `2` (MQTT and TV connected). Retained.                  |
-| `lgtv/status/power`          | `on`, `standby`, `screen_off`, `screen_saver`, `off`. `off` is also set when the TV goes away. |
-| `lgtv/status/volume`         | `0`..`100`                                                                                     |
-| `lgtv/status/mute`           | `1` / `0`                                                                                      |
-| `lgtv/status/foregroundApp`  | app id, e.g. `netflix`, `com.webos.app.livetv`, `com.webos.app.hdmi2`                          |
-| `lgtv/status/currentChannel` | JSON `{"val": <channelNumber>, "lgtv": {...}}`, only while live TV is in the foreground        |
+| topic                        | payload                                                                                         |
+| ---------------------------- | ----------------------------------------------------------------------------------------------- |
+| `lgtv/connected`             | `0` (lgtv2mqtt down), `1` (MQTT only), `2` (MQTT and TV connected). Retained.                   |
+| `lgtv/status/power`          | `on`, `standby`, `screen_off`, `screen_saver`, `off`. `off` is also set when the TV goes away.  |
+| `lgtv/status/volume`         | `0`..`100`                                                                                      |
+| `lgtv/status/mute`           | `1` / `0`                                                                                       |
+| `lgtv/status/foregroundApp`  | app id, e.g. `netflix`, `com.webos.app.livetv`, `com.webos.app.hdmi2`                           |
+| `lgtv/status/currentChannel` | JSON `{"val": <channelNumber>, "lgtv": {...}}`, only while live TV is in the foreground         |
+| `lgtv/status/playState`      | `playing`, `paused`, `loaded`, `stopped`, ... of the foreground media app (newer firmware only) |
 
 ### Subscribed by lgtv2mqtt
 
@@ -108,7 +109,7 @@ Topics and payloads follow the [mqtt-smarthome architecture](https://github.com/
 | `lgtv/set/screen`                | `true`/`false` → screen on/off (audio keeps playing)                                                                                                                                    |
 | `lgtv/set/volume`                | `0`..`100`                                                                                                                                                                              |
 | `lgtv/set/mute`                  | `true`/`1`/`on` or `false`/`0`/`off`                                                                                                                                                    |
-| `lgtv/set/toast`                 | message string, or JSON `{"message": "...", "iconData": "<base64>", "iconExtension": "png"}`                                                                                            |
+| `lgtv/set/toast`                 | message string, or JSON `{"message": "...", "icon": "https://host/logo.png"}` (`icon`: http(s) URL or local file, max 512 kB; or raw `iconData` base64 + `iconExtension`)               |
 | `lgtv/set/launch`                | app id, or JSON `{"id": "netflix", "contentId": "..."}`                                                                                                                                 |
 | `lgtv/set/youtube`               | YouTube video id                                                                                                                                                                        |
 | `lgtv/set/button`                | `LEFT RIGHT UP DOWN ENTER BACK EXIT HOME MENU INFO DASH ASTERISK CC PLAY PAUSE STOP REWIND FASTFORWARD RED GREEN YELLOW BLUE VOLUMEUP VOLUMEDOWN MUTE CHANNELUP CHANNELDOWN 0`-`9`      |

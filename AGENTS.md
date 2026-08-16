@@ -34,6 +34,8 @@ QoS 0 everywhere. Do not rename topics outside of a major release (see ROADMAP.m
 - `index.js` — MQTT connection, set-topic dispatch (`handleSet`), TV subscriptions
   (volume, foreground app, power state, current channel while live TV is active), shutdown.
 - `lib/payload.js` — pure helpers (`parsePayload`, `toBoolean`, `toVolume`), unit tested.
+- `lib/toast.js` — `set/toast` payload builder, loads `icon` from URL/file as base64; tested
+  with a local http server.
 - `lib/install.js` — `--install`/`--uninstall`: systemd template unit `lgtv2mqtt@.service`,
   instance = `--name`; env file `/etc/lgtv2mqtt/<name>.env`, state dir
   `/var/lib/lgtv2mqtt/<name>`. Pure parts (`unitFile`, `envFile`) are unit tested; the

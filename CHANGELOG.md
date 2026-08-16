@@ -1,11 +1,19 @@
 # Changelog
 
-## 1.2.1
+## 1.3.0
+
+### Added
+
+- `status/playState`: play/pause state of the foreground media app (`playing`, `paused`,
+  `loaded`, `stopped`, ...) from `com.webos.media/getForegroundAppInfo`; newer firmware only (#19).
+- `set/toast` with an icon: JSON `{"message": "...", "icon": "<http(s) url or local file>"}` loads
+  the image and sends it as `iconData`/`iconExtension`; raw `iconData` is still accepted (#7).
 
 ### Fixed
 
 - Docker image build failed on arm64/armv7 (native build of `bufferutil`); the image now
   installs with `--ignore-scripts` and uses the pure-JS fallback.
+- Release workflow publishes to npm via OIDC trusted publishing (no token needed).
 
 ## 1.2.0
 
