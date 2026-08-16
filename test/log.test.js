@@ -42,12 +42,12 @@ describe('text format', () => {
     test('timestamp and severity, no color', () => {
         const {log, lines} = capture({format: 'text', color: false});
         log.info('hello');
-        assert.match(lines[0], /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} <info>  hello$/);
+        assert.match(lines[0], /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{3} <info> {2}hello$/);
     });
     test('color codes on request', () => {
         const {log, lines} = capture({format: 'text', color: true});
         log.error('x');
-        assert.match(lines[0], /\x1b\[.*<error>.*x$/);
+        assert.ok(lines[0].includes('\x1b[') && lines[0].includes('<error>') && lines[0].endsWith('x'));
     });
 });
 
