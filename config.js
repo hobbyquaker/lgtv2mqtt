@@ -68,6 +68,20 @@ module.exports = require('yargs')
         choices: ['error', 'warn', 'info', 'debug'],
         default: 'info',
     })
+    .option('install', {
+        type: 'boolean',
+        describe:
+            'install as systemd service lgtv2mqtt@<name> using the other options as its config, enable and start it. needs root',
+    })
+    .option('uninstall', {
+        type: 'boolean',
+        describe: 'stop, disable and remove the systemd service lgtv2mqtt@<name>. needs root',
+    })
+    .example('$0 -t 192.168.1.20 -m aa:bb:cc:dd:ee:ff -u mqtt://broker', 'run in the foreground')
+    .example(
+        'sudo $0 --install -n tv-living -t 192.168.1.20 -m aa:bb:cc:dd:ee:ff -u mqtt://broker',
+        'install as service lgtv2mqtt@tv-living',
+    )
     .epilog(
         'Every option can also be set via environment variable, e.g. LGTV2MQTT_TV, LGTV2MQTT_MQTT_URL, LGTV2MQTT_MAC.\n' +
             pkg.homepage,

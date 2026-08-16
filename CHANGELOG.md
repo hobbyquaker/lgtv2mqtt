@@ -29,6 +29,9 @@ Works again with current TVs (2023+ firmware), built on lgtv2 1.8.
   `{"id": "netflix", "contentId": "..."}`).
 - `--no-raw-set` disables the raw `set/<service>/<method>` SSAP passthrough.
 - Graceful shutdown on SIGINT/SIGTERM: publishes `connected: 0`, closes TV and MQTT.
+- `--install` / `--uninstall`: run as systemd template service `lgtv2mqtt@<name>` (one instance
+  per TV, config in `/etc/lgtv2mqtt/<name>.env`, key in `/var/lib/lgtv2mqtt/<name>/`, shared
+  system user `lgtv2mqtt`).
 - Dockerfile (`ghcr.io/hobbyquaker/lgtv2mqtt`, key volume `/data`), GitHub Actions CI and
   release workflow, eslint + prettier, unit tests.
 

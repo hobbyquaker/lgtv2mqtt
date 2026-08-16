@@ -11,12 +11,13 @@ set -euo pipefail
 # Optional env vars:
 #   REMOTE_DIR   (default: /usr/local/lib/node_modules/lgtv2mqtt)
 #   REMOTE_TMP   (default: /tmp)
-#   SERVICE      (default: lgtv2mqtt) systemd unit to restart after deploying
+#   SERVICE      systemd unit(s) to restart after deploying; default: every active
+#                lgtv2mqtt@<name> instance plus a plain lgtv2mqtt unit if present
 
 REMOTE_HOST="${1:-mqtt-ifaces}"
 REMOTE_DIR="${REMOTE_DIR:-/usr/local/lib/node_modules/lgtv2mqtt}"
 REMOTE_TMP="${REMOTE_TMP:-/tmp}"
-SERVICE="${SERVICE:-lgtv2mqtt}"
+SERVICE="${SERVICE:-}"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -58,7 +59,16 @@ sudo mkdir -p "$REMOTE_DIR"
 sudo find "$REMOTE_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 sudo tar -xzf "$REMOTE_TGZ" -C "$REMOTE_DIR" --strip-components=1
 sudo npm install --omit=dev --prefix "$REMOTE_DIR"
-sudo systemctl restart "$SERVICE"
+if [[ -z "$SERVICE" ]]; then
+  SERVICE="$(systemctl list-units --plain --no-legend --type=service 'lgtv2mqtt@*.service' lgtv2mqtt.service | awk '{print $1}' | tr '\n' ' ')"
+fi
+if [[ -n "$SERVICE" ]]; then
+  echo "Restarting: $SERVICE"
+  # shellcheck disable=SC2086
+  sudo systemctl restart $SERVICE
+else
+  echo "No lgtv2mqtt service found to restart (install one with: sudo lgtv2mqtt --install ...)"
+fi
 sudo rm -f "$REMOTE_TGZ"
 EOF
 

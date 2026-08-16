@@ -7,6 +7,22 @@ const config = require('./config.js');
 const pkg = require('./package.json');
 const {parsePayload, toBoolean, toVolume} = require('./lib/payload.js');
 
+if (config.install || config.uninstall) {
+    const {installService, uninstallService} = require('./lib/install.js');
+    const plain = (...args) => console.log(...args);
+    try {
+        if (config.uninstall) {
+            uninstallService(config, plain);
+        } else {
+            installService(config, plain);
+        }
+        process.exit(0);
+    } catch (err) {
+        console.error('error:', err.message);
+        process.exit(1);
+    }
+}
+
 const topicPrefix = config.name;
 const connectedTopic = topicPrefix + '/connected';
 
