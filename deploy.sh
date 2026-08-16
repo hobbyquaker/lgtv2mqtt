@@ -59,6 +59,9 @@ sudo mkdir -p "$REMOTE_DIR"
 sudo find "$REMOTE_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 sudo tar -xzf "$REMOTE_TGZ" -C "$REMOTE_DIR" --strip-components=1
 sudo npm install --omit=dev --prefix "$REMOTE_DIR"
+# npm install -g would create the bin link; a plain tar extract does not
+sudo chmod +x "$REMOTE_DIR/index.js"
+sudo ln -sfn "$REMOTE_DIR/index.js" /usr/local/bin/lgtv2mqtt
 if [[ -z "$SERVICE" ]]; then
   SERVICE="$(systemctl list-units --plain --no-legend --type=service 'lgtv2mqtt@*.service' lgtv2mqtt.service | awk '{print $1}' | tr '\n' ' ')"
 fi
