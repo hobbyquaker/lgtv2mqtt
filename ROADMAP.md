@@ -10,8 +10,17 @@ they are not repeated here. lgtv2mqtt is the **second** adapter to be migrated
 (after the lgsb2mqtt pilot). Decisions specific to this repo are numbered T-n,
 open questions continue the fleet numbering (OQ-19+).
 
-**Order of work: 1.2.0 hotfix (wss + crash) → 1.3.0 hygiene/deps → 2.0 on the
-core lib with friendly topics + HA discovery.**
+**Order of work: 1.2.0 on lgtv2 ^1.8 (wss, power, WoL, deps, hygiene) → 2.0 on
+the core lib with friendly topics + HA discovery.**
+
+> **Update 2026-08: lgtv2 1.7.0 / 1.8.0 are released** (see
+> [lgtv2 CHANGELOG](https://github.com/hobbyquaker/lgtv2/blob/master/CHANGELOG.md)).
+> They solve most of what the 1.2.0/1.3.0 steps were going to patch here by
+> hand — wss/ws auto-fallback, `volumeStatus` normalization, handshake timeout,
+> IPv6, `LGTV2_KEY_DIR`, `getPowerState()`/`subscribePowerState()`, `wake()`,
+> `verifyCert`, promise API, SSAP errors as `Error`. The two 1.x steps were
+> therefore merged into a single 1.2.0 (T-6). Section 1 still describes 1.1.1
+> as it is; items now covered by the lib are marked *(lib, 1.7/1.8)*.
 
 ---
 
@@ -27,13 +36,16 @@ LG's protocol change. 26 commits, last one in 2018. Findings:
   the "LG Connect Apps" menu was also renamed/moved on newer models.
   Reported as lgtv2mqtt #17 and lgtv2 #48/#49. Working fix (from lgtv2 #48):
   `url: 'wss://host:3001'` plus `wsconfig: {tlsOptions: {rejectUnauthorized: false}}`.
-  Older (2014–2017) TVs still need `ws://:3000` → keep an `--insecure`/port
-  option or do the aiowebostv approach (try one port, fall back to the other).
+  *(lib, 1.7)*: with the `host` option lgtv2 tries `wss:3001` first and
+  `ws:3000` second and remembers the working port — no `--insecure` flag needed
+  (lgtv2 OQ-25 / OQ-20 below).
 - **Crash on subscription payloads without `changed`** (index.js:137, #18):
   `res.changed.indexOf('volume')` — newer firmware answers `getVolume` with
   `volumeStatus: {volume, muteStatus, ...}` and no `changed` array; `err` is
   never checked either. Same pattern in `getForegroundAppInfo` (`res.appId`
-  with `res` undefined on error).
+  with `res` undefined on error). *(lib, 1.7/1.8)*: `getVolume` payloads are
+  normalized (`volume`/`muted`/`changed` always present, also on webOS 6.0);
+  the `err` guards are still ours to add.
 
 ### Bugs / robustness
 
@@ -55,16 +67,21 @@ LG's protocol change. 26 commits, last one in 2018. Findings:
 - **Power state is only inferred** from the websocket being open (`connected`
   1/2). Users want an explicit `status/power` (#6) and the ability to turn the
   TV *on* — `system/turnOn` does nothing while the TV is off, Wake-on-LAN is
-  the only way (Home Assistant does the same).
+  the only way (Home Assistant does the same). *(lib, 1.8)*:
+  `subscribePowerState()` → `on | standby | screen_off | screen_saver | off`,
+  `wake(mac)` with `mac` option; measured on a webOS 6.0 OLED: socket closes
+  ~4 s after `turnOff`, TV reachable ~2 s after the magic packet.
 - **Pairing UX**: the `prompt` event is only logged at `info`; no hint where the
   client key is stored (`~/.lgtv2/keyfile-<host>` via `persist-path`) and no
-  `--key-file` option (matters for Docker volumes).
+  `--key-file` option (matters for Docker volumes). *(lib, 1.8)*:
+  `LGTV2_KEY_DIR` env var; pairing rejection now emits `error` instead of a
+  second `prompt`.
 
 ### Dependencies (all 5–8 years stale)
 
 | dep     | pinned  | latest | notes                                                                                                                                                                                                                                          |
 | ------- | ------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| lgtv2   | ^1.4.1  | 1.6.3  | Our own lib (hobbyquaker/lgtv2, last publish 2022-06). Callback API, `websocket` 1.0.35 + `persist-path` + `mkdirp`. No first-class TLS option (only via `wsconfig.tlsOptions`), IPv6 hostname regex bug, open PR #42, open issues #38/#44/#49/#50. |
+| lgtv2   | ^1.4.1  | 1.8.0  | Our own lib. 1.7.0 (2026-08-15) and 1.8.0 fixed the wss/TLS, IPv6, PR #42, #38/#47/#49/#50 items and added power/WoL/verifyCert helpers, promises, TS types, node ≥20, `websocket` as the only dependency. **Target: `^1.8.0`.** |
 | mqtt    | ^2.18.0 | 5.15.2 | v5 requires node ≥18, `new` no longer required, built-in error handler, TS rewrite. lgsb2mqtt is already on ^5.5.                                                                                                                              |
 | yargs   | ^11.0.0 | 18.1.0 | 18 is ESM-first, singleton `yargs.argv` removed, node ≥20.19. lgsb2mqtt uses ^17.7 (CJS-compatible); follow the fleet choice.                                                                                                                  |
 | yalm    | ^4.1.0  | 4.1.0  | Our own, unchanged since 2017; fine until the core lib replaces it.                                                                                                                                                                             |
@@ -82,10 +99,12 @@ Alternative TV libraries evaluated:
   endpoint table (section 2).
 
 **→ T-1: keep `lgtv2`** (we own it) and modernize it in lockstep rather than
-switching libs: add an `ssl`/`rejectUnauthorized` option, promise API, fix
-IPv6, merge PR #42, publish 1.7. Absorbing it into `lib/` (as done with
+switching libs. Done with 1.7.0/1.8.0. Absorbing it into `lib/` (as done with
 `lg-soundbar`, D-12) is *not* planned — lgtv2 has 17 dependents and ~350 stars
-and is worth keeping standalone.
+and is worth keeping standalone. Still open on the lib side and inherited here
+when they land: auto-learned MAC for `wake()` (lgtv2 OQ-31, planned 1.9 →
+makes `--mac` optional), PIN pairing (lgtv2 OQ-27), ESM/`ws` transport (lgtv2
+2.0, coordinated with lgtv2mqtt 2.0).
 
 ### Packaging / hygiene
 
@@ -147,10 +166,12 @@ lgtv2mqtt does not expose yet. ★ = most requested.
 | ID  | Decision                                                                                                                                                                    |
 | --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | T-1 | Keep `lgtv2` as a separate, owned library; modernize it (wss/TLS option, promises, IPv6, PR #42) in lockstep. Not absorbed into this repo.                                   |
-| T-2 | 1.2.0 is a **pure hotfix** on the existing code base (wss:3001 default, crash guards, mute fix) so current users get working TVs before the 2.0 rewrite. No topic changes.  |
-| T-3 | Default to `wss://<tv>:3001` with `rejectUnauthorized: false`; `--insecure` (or `--tv-port 3000`) for pre-2018 TVs. Document why cert verification is off (self-signed cert). |
+| T-2 | ~~1.2.0 is a pure hotfix on the existing code base~~ — superseded by T-6: lgtv2 1.8 requires node ≥20 anyway, so the hotfix and the hygiene release are one release.        |
+| T-3 | ~~`--insecure` flag~~ — superseded: the lib's `host` option auto-falls back wss→ws. Only pass-throughs are offered: `--tv-port` (pin a port) and `--verify-cert lg\|tofu\|<fp>`. |
 | T-4 | Raw SSAP passthrough (`set/<service>/<method>`) stays, but behind `--raw-set` (default on in 1.x for compatibility, off in 2.0) with a security note.                         |
-| T-5 | Power-on via Wake-on-LAN inside the adapter (`--mac`), not via a separate tool.                                                                                              |
+| T-5 | Power-on via Wake-on-LAN inside the adapter (`--mac`, lib `wake()`), not via a separate tool. `set/power true` → `wake()`, `false` → `system/turnOff`.                        |
+| T-6 | **1.2.0 = "lgtv2 ^1.8 release"**: one release merging the former 1.2.0 + 1.3.0 lists, no topic renames (those are 2.0). Additive topics (`status/power`, `set/power`) are fine. |
+| T-7 | `--verify-cert` defaults to `lg` in 2.0 (authenticates "an LG TV"); opt-in in 1.2.0 to avoid surprising anyone behind proxies/port-forwards.                                   |
 
 ---
 
@@ -159,12 +180,12 @@ lgtv2mqtt does not expose yet. ★ = most requested.
 - **OQ-19 — Item naming convention** for the fleet: camelCase (current
   lgtv2mqtt: `foregroundApp`) vs. snake_case (lgsb2mqtt draft: `input_list`).
   Must be settled in the spec before 2.0; proposal: snake_case.
-- **OQ-20 — Pre-2023 TVs**: keep `ws://:3000` via flag (T-3) or auto-fallback
-  like aiowebostv (try one port, then the other)? Fallback is friendlier, the
-  flag is simpler and deterministic. Leaning: flag + clear error message.
-- **OQ-21 — Key file location in Docker**: `--key-file` option vs. a fixed
-  `/data` volume convention for the whole fleet (also affects HA discovery
-  state). Spec question.
+- **OQ-20 — Pre-2023 TVs** — **decided in lgtv2 1.7 (OQ-25)**: auto-fallback
+  in the lib; the working port is remembered, a combined `ECONNFAILED` error
+  is emitted when both fail. Nothing to do here beyond `--tv-port` for pinning.
+- **OQ-21 — Key file location in Docker** — **mechanism done** (`LGTV2_KEY_DIR`
+  in lgtv2 1.8). Open: does the fleet spec mandate `/data` as the volume for all
+  adapters? Dockerfile sets `LGTV2_KEY_DIR=/data` until decided.
 - **OQ-22 — HA media_player mapping**: which MQTT Media Player custom component
   (shared with OQ-17). lgtv2mqtt is the richer test case (app list, inputs,
   media state, power).
@@ -176,34 +197,55 @@ lgtv2mqtt does not expose yet. ★ = most requested.
 
 ## 5. Immediate next steps
 
-### 1.2.0 — hotfix (current code base, T-2)
+### 1.2.0 — on lgtv2 ^1.8 (T-6)
 
-- [ ] Default URL `wss://<tv>:3001` + `wsconfig.tlsOptions.rejectUnauthorized = false`;
-      add `--insecure` for `ws://:3000` (T-3). Fixes #17.
-- [ ] Guard `res` / `res.changed` in all subscription callbacks; check `err`;
-      handle the `volumeStatus` payload shape. Fixes #18.
+TV connection / lib adoption:
+
+- [ ] `lgtv2` `^1.8.0`; construct with `{host: config.tv, mac, verifyCert, port}`
+      instead of `url: 'ws://…:3000'`. Fixes #17 (wss) via the lib's fallback.
+- [ ] New options: `--mac` (WoL), `--verify-cert` (`lg`/`tofu`/fingerprint,
+      opt-in per T-7), `--tv-port` (pin 3000/3001), `--key-dir` → `LGTV2_KEY_DIR`.
+- [ ] `status/power` from `subscribePowerState()` (#6): publish the mapped state
+      (`on`, `standby`, `screen_off`, `screen_saver`, `off`), retained; set it to
+      `off` on `close` since a deep-standby TV does not answer at all.
+- [ ] `set/power` (T-5): truthy → `lgtv.wake()` (error if no `--mac`), falsy →
+      `system/turnOff`. `set/screen` → `turnOnScreen`/`turnOffScreen` (cheap,
+      same service).
+- [ ] Use the promise API; log `ESSAP` errors from the raw passthrough at `warn`
+      (previously silent). Log `ECERT`/`ECONNFAILED` with a hint.
+- [ ] Log the key-file path (`lgtv.keyFile`) on `prompt`; log pairing rejection.
+
+Bug fixes (still ours):
+
+- [ ] Guard `err`/`res` in every subscription callback (#18 is fixed in the lib,
+      but error responses must not crash the adapter).
 - [ ] Fix `set/mute` `'0'`/`'1'` handling; clamp/validate `set/volume`.
-- [ ] Reset `channelsSubscribed` on `close`.
-- [ ] Graceful shutdown (SIGINT/SIGTERM → `connected: 0`, `lgtv.disconnect()`).
-- [ ] `--mqtt-username` / `--mqtt-password` (or document URL credentials) — #10/#15.
-- [ ] Log the key-file path on `prompt`; add `--key-file`.
-- [ ] README: fix dead links, wss pairing instructions, remove Travis/david-dm badges.
+- [ ] Reset `channelsSubscribed` on `close`; `unsubscribe()` the channel
+      subscription when leaving live TV (lib now returns subscription ids).
+- [ ] Graceful shutdown (SIGINT/SIGTERM → `connected: 0`, `await lgtv.disconnect()`).
+
+Hygiene (copy from lgsb2mqtt 0.1.0):
+
+- [ ] `--mqtt-url` primary (`-u/--url` aliases), `--mqtt-username/--mqtt-password`
+      (#10/#15), env vars `LGTV2MQTT_*`, `--strict`.
+- [ ] `engines >=20`, `mqtt` ^5, `yargs` ^17, drop xo; eslint + prettier;
+      GitHub Actions (lint + test); Dockerfile (`LGTV2_KEY_DIR=/data`, volume)
+      + GHCR release workflow; `files` whitelist; remove `.travis.yml`.
+- [ ] README: fix dead links, wss pairing + WoL TV-settings instructions,
+      remove Travis/david-dm badges, document new topics/options.
 - [ ] CHANGELOG.md and AGENTS.md like lgsb2mqtt.
-- [ ] Bump `engines` to `>=20`, `mqtt` ^5, `yargs` ^17 (same as lgsb2mqtt), drop xo.
-- [ ] Release 1.2.0 on npm.
-
-### 1.3.0 — hygiene
-
-- [ ] `--mqtt-url` primary (`-u/--url` aliases), env vars `LGTV2MQTT_*`, `--strict`.
-- [ ] eslint + prettier, GitHub Actions (lint), Dockerfile + GHCR release workflow
-      (copy from lgsb2mqtt), `files` whitelist.
-- [ ] `status/power` from the `getPowerState` subscription (#6) and Wake-on-LAN
-      `set/power` with `--mac` (T-5) — additive, no breaking change.
-- [ ] lgtv2 1.7: `ssl` option, IPv6 fix, merge PR #42, release; then depend on it.
+- [ ] Smoke test against the real TV (OLED65C17LB, webOS 6.0 — the one lgtv2
+      1.8 was verified on): pairing, power cycle via `set/power`, volume/mute,
+      app switch, button.
+- [ ] Release 1.2.0 on npm + GHCR; close #6, #10, #15, #17, #18.
 
 ### 2.0.0 — on the core lib (fleet Phase 3)
 
-- [ ] Port to ESM + core lib (after the lgsb2mqtt 1.0 pilot).
+- [ ] Port to ESM + core lib (after the lgsb2mqtt 1.0 pilot); coordinate with
+      lgtv2 2.0 (ESM, `ws` transport, `changed` synthesis removed → switch the
+      volume subscription to `audio/getStatus`).
+- [ ] `--verify-cert lg` becomes the default (T-7); `--mac` optional once
+      lgtv2 learns the MAC itself (lgtv2 OQ-31).
 - [ ] Friendly topic set from section 2 (power, screen, volume, mute,
       sound_output, input/input_list, app/app_list, channel, media, toast,
       buttons); `--json-payloads`; raw passthrough behind `--raw-set` (T-4).
