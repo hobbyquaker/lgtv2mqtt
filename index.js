@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const log = require('yalm');
+const log = require('./lib/log.js');
 const Mqtt = require('mqtt');
 const Lgtv = require('lgtv2');
 const config = require('./config.js');

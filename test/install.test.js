@@ -36,6 +36,8 @@ describe('unitFile', () => {
         assert.match(unit, /^Environment=LGTV2_KEY_DIR=%S\/lgtv2mqtt\/%i$/m);
         assert.match(unit, /^StateDirectory=lgtv2mqtt\/%i$/m);
         assert.match(unit, /^User=lgtv2mqtt$/m);
+        assert.match(unit, /^SyslogIdentifier=lgtv2mqtt@%i$/m);
+        assert.match(unit, /^SyslogLevelPrefix=true$/m);
         assert.match(unit, /^WantedBy=multi-user\.target$/m);
     });
 });

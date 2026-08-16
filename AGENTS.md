@@ -34,6 +34,9 @@ QoS 0 everywhere. Do not rename topics outside of a major release (see ROADMAP.m
 - `index.js` — MQTT connection, set-topic dispatch (`handleSet`), TV subscriptions
   (volume, foreground app, power state, current channel while live TV is active), shutdown.
 - `lib/payload.js` — pure helpers (`parsePayload`, `toBoolean`, `toVolume`), unit tested.
+- `lib/log.js` — leveled logger (`debug/info/warn/error`, `setLevel`). Text format with
+  timestamp on a tty, journald format (`<N>` priority prefix, no timestamp) when stdout is the
+  systemd journal; never add timestamps or identifiers to messages yourself.
 - `lib/toast.js` — `set/toast` payload builder, loads `icon` from URL/file as base64; tested
   with a local http server.
 - `lib/install.js` — `--install`/`--uninstall`: systemd template unit `lgtv2mqtt@.service`,

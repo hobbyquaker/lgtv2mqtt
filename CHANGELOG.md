@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1
+
+### Changed
+
+- Logging follows journald conventions when running under systemd: no own timestamp, severity
+  as `<N>` priority prefix (so `journalctl -p warning -u lgtv2mqtt@<name>` works), and the
+  unit sets `SyslogIdentifier=lgtv2mqtt@<name>` so lines are prefixed with the instance instead
+  of `node[pid]`. Auto-detected via `JOURNAL_STREAM`; `LGTV2MQTT_LOG_FORMAT=journal|text` forces
+  a format. Existing installations: re-run `lgtv2mqtt --install ...` (or add the two lines to the
+  unit) to get the identifier. The `yalm` dependency was replaced by a small built-in logger.
+
 ## 1.3.0
 
 ### Added
