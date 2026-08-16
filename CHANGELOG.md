@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1
+
+### Fixed
+
+- Docker image build failed on arm64/armv7 (native build of `bufferutil`); the image now
+  installs with `--ignore-scripts` and uses the pure-JS fallback.
+
 ## 1.2.0
 
 Works again with current TVs (2023+ firmware), built on lgtv2 1.8.

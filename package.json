@@ -1,6 +1,6 @@
 {
   "name": "lgtv2mqtt",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Interface between LG WebOS Smart TVs and MQTT",
   "main": "index.js",
   "preferGlobal": true,

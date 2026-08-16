@@ -3,7 +3,9 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+# --ignore-scripts: bufferutil/utf-8-validate (optional native addons of the websocket lib)
+# have no musl prebuilds and would need a compiler; they fall back to pure JS at runtime.
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY index.js config.js ./
 COPY lib/ ./lib/
