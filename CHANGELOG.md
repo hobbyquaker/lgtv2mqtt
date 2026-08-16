@@ -10,6 +10,8 @@
   of `node[pid]`. Auto-detected via `JOURNAL_STREAM`; `LGTV2MQTT_LOG_FORMAT=journal|text` forces
   a format. Existing installations: re-run `lgtv2mqtt --install ...` (or add the two lines to the
   unit) to get the identifier. The `yalm` dependency was replaced by a small built-in logger.
+- An unreachable TV (off, standby, connection refused/timeout) is logged at `warn` instead of
+  `error`; certificate and pairing failures stay errors.
 
 ## 1.3.0
 

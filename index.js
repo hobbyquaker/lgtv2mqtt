@@ -379,7 +379,12 @@ lgtv.on('error', (err) => {
     } else if (err.code === 'ECONNFAILED') {
         hint = ' (is the tv on and is "LG Connect Apps" / "Mobile TV on" enabled?)';
     }
-    log.error('tv', (err.message || String(err)) + hint);
+    // an unreachable tv (off, standby, network) is the normal case, not an error
+    const transient = ['ETIMEDOUT', 'ECONNFAILED', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'ENOTFOUND'];
+    const unreachable =
+        transient.includes(err.code) ||
+        /ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|ENOTFOUND|socket hang up|handshake timeout/.test(err.message || '');
+    log[unreachable ? 'warn' : 'error']('tv', (err.message || String(err)) + hint);
 });
 
 /*
