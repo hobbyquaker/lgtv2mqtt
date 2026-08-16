@@ -10,8 +10,9 @@ they are not repeated here. lgtv2mqtt is the **second** adapter to be migrated
 (after the lgsb2mqtt pilot). Decisions specific to this repo are numbered T-n,
 open questions continue the fleet numbering (OQ-19+).
 
-**Order of work: 1.2.0 on lgtv2 ^1.8 (wss, power, WoL, deps, hygiene) → 2.0 on
-the core lib with friendly topics + HA discovery.**
+**Order of work: ~~1.2.0 on lgtv2 ^1.8~~ (released) → fleet Phase 1/2 (spec +
+core lib, lgsb2mqtt pilot) → 2.0 here on the core lib with friendly topics + HA
+discovery, coordinated with lgtv2 2.0.**
 
 > **Update 2026-08: lgtv2 1.7.0 / 1.8.0 are released** (see
 > [lgtv2 CHANGELOG](https://github.com/hobbyquaker/lgtv2/blob/master/CHANGELOG.md)).
@@ -197,46 +198,54 @@ lgtv2mqtt does not expose yet. ★ = most requested.
 
 ## 5. Immediate next steps
 
-### 1.2.0 — on lgtv2 ^1.8 (T-6)
+### 1.2.0 — on lgtv2 ^1.8 (T-6) — released 2026-08
 
 TV connection / lib adoption:
 
-- [ ] `lgtv2` `^1.8.0`; construct with `{host: config.tv, mac, verifyCert, port}`
+- [x] `lgtv2` `^1.8.0`; construct with `{host: config.tv, mac, verifyCert, port}`
       instead of `url: 'ws://…:3000'`. Fixes #17 (wss) via the lib's fallback.
-- [ ] New options: `--mac` (WoL), `--verify-cert` (`lg`/`tofu`/fingerprint,
-      opt-in per T-7), `--tv-port` (pin 3000/3001), `--key-dir` → `LGTV2_KEY_DIR`.
-- [ ] `status/power` from `subscribePowerState()` (#6): publish the mapped state
+- [x] New options: `--mac` (WoL), `--verify-cert` (`lg`/`tofu`/fingerprint,
+      opt-in per T-7), `--tv-port` (pin 3000/3001), `--tv-url`, `--key-dir` → `LGTV2_KEY_DIR`.
+- [x] `status/power` from `subscribePowerState()` (#6): publish the mapped state
       (`on`, `standby`, `screen_off`, `screen_saver`, `off`), retained; set it to
       `off` on `close` since a deep-standby TV does not answer at all.
-- [ ] `set/power` (T-5): truthy → `lgtv.wake()` (error if no `--mac`), falsy →
+- [x] `set/power` (T-5): truthy → `lgtv.wake()` (error if no `--mac`), falsy →
       `system/turnOff`. `set/screen` → `turnOnScreen`/`turnOffScreen` (cheap,
       same service).
-- [ ] Use the promise API; log `ESSAP` errors from the raw passthrough at `warn`
+- [x] Use the promise API; log `ESSAP` errors from the raw passthrough at `warn`
       (previously silent). Log `ECERT`/`ECONNFAILED` with a hint.
-- [ ] Log the key-file path (`lgtv.keyFile`) on `prompt`; log pairing rejection.
+- [x] Log the key-file path (`lgtv.keyFile`) on `prompt`; log pairing rejection.
 
 Bug fixes (still ours):
 
-- [ ] Guard `err`/`res` in every subscription callback (#18 is fixed in the lib,
+- [x] Guard `err`/`res` in every subscription callback (#18 is fixed in the lib,
       but error responses must not crash the adapter).
-- [ ] Fix `set/mute` `'0'`/`'1'` handling; clamp/validate `set/volume`.
-- [ ] Reset `channelsSubscribed` on `close`; `unsubscribe()` the channel
+- [x] Fix `set/mute` `'0'`/`'1'` handling; clamp/validate `set/volume`.
+- [x] Reset `channelsSubscribed` on `close`; `unsubscribe()` the channel
       subscription when leaving live TV (lib now returns subscription ids).
-- [ ] Graceful shutdown (SIGINT/SIGTERM → `connected: 0`, `await lgtv.disconnect()`).
+- [x] Graceful shutdown (SIGINT/SIGTERM → `connected: 0`, `await lgtv.disconnect()`).
 
 Hygiene (copy from lgsb2mqtt 0.1.0):
 
-- [ ] `--mqtt-url` primary (`-u/--url` aliases), `--mqtt-username/--mqtt-password`
+- [x] `--mqtt-url` primary (`-u/--url` aliases), `--mqtt-username/--mqtt-password`
       (#10/#15), env vars `LGTV2MQTT_*`, `--strict`.
-- [ ] `engines >=20`, `mqtt` ^5, `yargs` ^17, drop xo; eslint + prettier;
+- [x] `engines >=20`, `mqtt` ^5, `yargs` ^17, drop xo; eslint + prettier;
       GitHub Actions (lint + test); Dockerfile (`LGTV2_KEY_DIR=/data`, volume) + GHCR release workflow; `files` whitelist; remove `.travis.yml`.
-- [ ] README: fix dead links, wss pairing + WoL TV-settings instructions,
+- [x] README: fix dead links, wss pairing + WoL TV-settings instructions,
       remove Travis/david-dm badges, document new topics/options.
-- [ ] CHANGELOG.md and AGENTS.md like lgsb2mqtt.
-- [ ] Smoke test against the real TV (OLED65C17LB, webOS 6.0 — the one lgtv2
-      1.8 was verified on): pairing, power cycle via `set/power`, volume/mute,
-      app switch, button.
-- [ ] Release 1.2.0 on npm + GHCR; close #6, #10, #15, #17, #18.
+- [x] CHANGELOG.md and AGENTS.md like lgsb2mqtt.
+- [x] `--install`/`--uninstall` as systemd template unit `lgtv2mqtt@<name>` (one
+      instance per TV, instance = `--name`); `deploy.sh` for the home server.
+- [x] Smoke test against lgtv2's mock TV + mosquitto (`scripts/e2e.sh`):
+      pairing, status volume/mute/power, set handling, SSAP errors, shutdown.
+- [x] Smoke test against the real TV (OLED65C17LB, webOS 6.0) as systemd instance
+      on the home server: pairing, volume events, toast verified. **Not yet
+      verified**: `set/power` cycle (WoL + turnOff), `set/screen`, `set/button`,
+      app switch / `status/foregroundApp`, `status/currentChannel` — check these
+      opportunistically and file bugs as 1.2.x.
+- [x] Release 1.2.0 on npm (tag `v1.2.0`).
+- [ ] Confirm the GHCR image build from the release workflow; close #6, #10,
+      #15, #17, #18 with a pointer to 1.2.0.
 
 ### 2.0.0 — on the core lib (fleet Phase 3)
 
