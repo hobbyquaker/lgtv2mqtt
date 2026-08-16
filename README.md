@@ -2,111 +2,145 @@
 
 [![mqtt-smarthome](https://img.shields.io/badge/mqtt-smarthome-blue.svg)](https://github.com/mqtt-smarthome/mqtt-smarthome)
 [![NPM version](https://badge.fury.io/js/lgtv2mqtt.svg)](http://badge.fury.io/js/lgtv2mqtt)
-[![Dependencies Status](https://david-dm.org/hobbyquaker/lgtv2mqtt/status.svg)](https://david-dm.org/hobbyquaker/lgtv2mqtt)
-[![Build Status](https://travis-ci.org/hobbyquaker/lgtv2mqtt.svg?branch=master)](https://travis-ci.org/hobbyquaker/lgtv2mqtt)
-[![XO code style](https://img.shields.io/badge/code_style-XO-5ed9c7.svg)](https://github.com/sindresorhus/xo)
+[![CI](https://github.com/hobbyquaker/lgtv2mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/hobbyquaker/lgtv2mqtt/actions/workflows/ci.yml)
 [![License][mit-badge]][mit-url]
 
-> Interface between LG WebOS Smart TVs and MQTT 📺
+> Interface between LG webOS Smart TVs and MQTT 📺
 
+Works with current TVs (2023+ firmware, `wss://` on port 3001) as well as older models
+(`ws://` on port 3000). Built on [lgtv2](https://github.com/hobbyquaker/lgtv2).
 
-### Getting started
+## Getting started
 
-* TV configuration
+### TV configuration
 
-You need to allow "LG Connect Apps" on your TV - see http://www.lg.com/uk/support/product-help/CT00008334-1437131798537-others
+- Enable _LG Connect Apps_ (older models: Settings → Network; newer models: Settings → General →
+  Devices → External Devices → _LG Connect Apps_ / _Mobile Device Connection_).
+- For turning the TV on via Wake-on-LAN enable _Mobile TV On_ / _Turn on via Wi-Fi_
+  (Settings → General → Devices/Network) — 2025+ models: Settings → Support → IP control
+  settings → Wake on LAN. Wired connections are the most reliable.
 
+### Install and run
 
-* Install
+```
+npm install -g lgtv2mqtt
+lgtv2mqtt --tv 192.168.1.20 --mac aa:bb:cc:dd:ee:ff --mqtt-url mqtt://192.168.1.2
+```
 
-```npm install -g lgtv2mqtt```
+On first start the TV shows a pairing prompt — accept it. The key is stored in `~/.lgtv2/`
+(override with `--key-dir` or `LGTV2_KEY_DIR`).
 
+`lgtv2mqtt --help` lists all options; every option can also be set via an environment
+variable (`LGTV2MQTT_TV`, `LGTV2MQTT_MAC`, `LGTV2MQTT_MQTT_URL`, `LGTV2MQTT_NAME`, ...).
 
-* Start 
+| option | default | description |
 
-```lgtv2mqtt --help```  
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| ------------------------------------ | ------------------ | -------------------------------------------------------------------------------------------- |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `-t, --tv`                           | `lgwebostv`        | hostname or IP of the TV                                                                     |
+| `--tv-port`                          | _auto_             | pin `3001` (wss) or `3000` (ws); by default 3001 is tried first, then 3000                   |
+| `--tv-url`                           |                    | complete websocket URL (overrides `--tv`/`--tv-port`), e.g. behind a port forward            |
+| `-m, --mac`                          |                    | MAC address of the TV, needed for `set/power true` (Wake-on-LAN)                             |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `--wol-address`                      | `255.255.255.255`  | broadcast address for the magic packets (use your subnet broadcast if the TV does not react) |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `--verify-cert`                      | off                | `lg` (must be an LG TV), `tofu` (pin first seen certificate) or a SHA-256 fingerprint        |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `--key-dir`                          | `~/.lgtv2`         | where the pairing key is stored                                                              |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `--raw-set` / `--no-raw-set`         | on                 | allow raw SSAP requests via `set/<service>/<method>` (see below)                             |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `-u, --mqtt-url`                     | `mqtt://localhost` | broker URL, see [MQTT.js](https://github.com/mqttjs/MQTT.js#connect-using-a-url)             |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `--mqtt-username`, `--mqtt-password` |                    | broker credentials                                                                           |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `-n, --name`                         | `lgtv`             | instance name, used as topic prefix                                                          |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
+| `-v, --verbosity`                    | `info`             | `error`, `warn`, `info`, `debug`                                                             |
+|                                      |                    | complete websocket URL (overrides /), e.g. behind a port forward                             |
 
+### Docker
 
-### Topics subscribed by lgtv2mqtt
+```
+docker run -d --name lgtv2mqtt --network host -v lgtv2mqtt-data:/data \
+  -e LGTV2MQTT_TV=192.168.1.20 -e LGTV2MQTT_MAC=aa:bb:cc:dd:ee:ff -e LGTV2MQTT_MQTT_URL=mqtt://192.168.1.2 \
+  ghcr.io/hobbyquaker/lgtv2mqtt
+```
 
-Topics and Payloads follow [mqtt-smarthome Architecture](https://github.com/mqtt-smarthome/mqtt-smarthome).
+`--network host` is needed for Wake-on-LAN broadcasts. The pairing key lives in `/data`.
 
-#### lgtv/set/mute
+## Topics
 
-Enable or disable mute. Payload should be one off '0', '1', 'false' and 'true'.
+Topics and payloads follow the [mqtt-smarthome architecture](https://github.com/mqtt-smarthome/mqtt-smarthome).
+`set` topics accept plain values or JSON `{"val": ...}`.
 
-#### lgtv/set/volume
+### Published by lgtv2mqtt
 
-Set volume. Expects value between 0 and 100.
+| topic | payload |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| ---------------------------- | ---------------------------------------------------------------------------------------------- |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/connected` | `0` (lgtv2mqtt down), `1` (MQTT only), `2` (MQTT and TV connected). Retained. |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/status/power` | `on`, `standby`, `screen_off`, `screen_saver`, `off`. `off` is also set when the TV goes away. |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/status/volume` | `0`..`100` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/status/mute` | `1` / `0` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/status/foregroundApp` | app id, e.g. `netflix`, `com.webos.app.livetv`, `com.webos.app.hdmi2` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/status/currentChannel` | JSON `{"val": <channelNumber>, "lgtv": {...}}`, only while live TV is in the foreground |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
 
-#### lgtv/set/toast
+### Subscribed by lgtv2mqtt
 
-Show a Popup Message. Send Message as plain payload string.
+| topic | payload |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/power` | `true`/`1`/`on` → Wake-on-LAN (needs `--mac`), `false`/`0`/`off` → turn off |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/screen` | `true`/`false` → screen on/off (audio keeps playing) |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/volume` | `0`..`100` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/mute` | `true`/`1`/`on` or `false`/`0`/`off` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/toast` | message string, or JSON `{"message": "...", "iconData": "<base64>", "iconExtension": "png"}` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/launch` | app id, or JSON `{"id": "netflix", "contentId": "..."}` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/youtube` | YouTube video id |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/button` | `LEFT RIGHT UP DOWN ENTER BACK EXIT HOME MENU INFO DASH ASTERISK CC PLAY PAUSE STOP REWIND FASTFORWARD RED GREEN YELLOW BLUE VOLUMEUP VOLUMEDOWN MUTE CHANNELUP CHANNELDOWN 0`-`9` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/move`, `lgtv/set/drag` | JSON `{"dx": 100, "dy": 0}` — pointer movement |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/scroll` | JSON `{"dx": 0, "dy": 1}` |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/click` | any |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
+| `lgtv/set/<service>/<method>` | raw SSAP request, e.g. `lgtv/set/media.controls/pause`, `lgtv/set/system/turnOff`, `lgtv/set/tv/switchInput {"inputId": "HDMI_2"}`. Optional JSON payload. Disable with `--no-raw-set`. |
+| | | complete websocket URL (overrides /), e.g. behind a port forward |
 
-#### lgtv/set/launch
+Useful raw requests: `media.controls/play|pause|stop|rewind|fastForward`, `tv/channelUp`,
+`tv/channelDown`, `tv/openChannel {"channelNumber": "1"}`, `tv/switchInput {"inputId": "HDMI_1"}`,
+`com.webos.service.apiadapter/audio/changeSoundOutput {"output": "external_arc"}`,
+`system.launcher/close {"id": "netflix"}`. The full list is in the
+[lgtv2 README](https://github.com/hobbyquaker/lgtv2#commands).
 
-Lauch an app. Send AppId as plain payload string.
+## Notes
 
-#### lgtv/set/media.controls/play
-
-#### lgtv/set/media.controls/pause
-
-#### lgtv/set/media.controls/stop
-
-#### lgtv/set/media.controls/rewind
-
-#### lgtv/set/media.controls/fastForward
-
-#### lgtv/set/system/turnOff
-
-#### lgtv/set/com.webos.service.tv.display/set3DOn
-
-#### lgtv/set/com.webos.service.tv.display/set3DOff
-
-#### lgtv/set/move lgtv/set/drag
-
-Send coordinates as JSON with attributes dx and dy of type number
-
-Example payload: ```{dx: 100, dy: 0}```
-
-#### lgtv/set/scroll
-
-Send coordinates as JSON with attributes dx and dy of type number
-
-#### lgtv/set/click
-
-#### lgtv/set/button
-
-Send button as plain string payload
-
-Buttons that are known to work:
-MUTE, RED, GREEN, YELLOW, BLUE, HOME, MENU, VOLUMEUP, VOLUMEDOWN, CC, BACK, UP, DOWN, LEFT, ENTER, DASH, 0-9, EXIT,
-channelup, channeldown, record
-                    
-#### lgtv/set/youtube 
-
-Youtube video ID as payload. Runs youtube app and opens video.                    
-                    
-
-### topics published by lgtv2mqtt
-
-#### lgtv/status/volume
-
-Reports volume changes. Payload is the plain value.
-
-#### lgtv/status/mute
-
-Reports mute changes. Payload is '0' (not muted) or '1' (muted).
-
-#### lgtv/status/foregroundApp
-
-Reports which App is currently in foreground. (example Payloads: 'netflix', 'com.webos.app.livetv', 'com.webos.app.hdmi2')
-
-#### lgtv/status/currentChannel
-
-Reports current channel if foregroundApp is 'com.webos.app.livetv'. Payload is a JSON String, property val contains the
-channelNumber, underneath 'lgtv' you will find more properties with detailed information.
-
+- The raw passthrough is an unrestricted remote control API: protect your broker with
+  authentication/ACLs or disable it with `--no-raw-set`.
+- A TV in deep standby does not answer network requests at all; only Wake-on-LAN (`set/power true`)
+  brings it back. After `set/power false` the connection drops a few seconds later and
+  `status/power` becomes `off`.
+- The TV's TLS certificate is issued by LG's private CA and cannot be verified against public
+  roots; by default it is not verified. `--verify-cert lg` checks that the certificate is LG's
+  fleet-wide TV certificate, `--verify-cert tofu` pins whatever certificate is seen first.
 
 ## License
 
