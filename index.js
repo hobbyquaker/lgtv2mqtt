@@ -6,6 +6,7 @@ const Lgtv = require('lgtv2');
 const config = require('./config.js');
 const pkg = require('./package.json');
 const {parsePayload, toBoolean, toVolume} = require('./lib/payload.js');
+const {toastPayload} = require('./lib/toast.js');
 
 if (config.install || config.uninstall) {
     const {installService, uninstallService} = require('./lib/install.js');
@@ -134,10 +135,7 @@ async function handleSet(item, rest, value, topic) {
             if (value === undefined) {
                 return;
             }
-            if (value && typeof value === 'object') {
-                return request('ssap://system.notifications/createToast', value);
-            }
-            return request('ssap://system.notifications/createToast', {message: String(value)});
+            return request('ssap://system.notifications/createToast', await toastPayload(value));
 
         case 'volume': {
             const volume = toVolume(value);
@@ -306,6 +304,17 @@ lgtv.on('connect', () => {
         } else {
             unsubscribeChannel();
         }
+    });
+
+    // play/pause state of the foreground media app (newer firmware only; older TVs answer 404)
+    lgtv.subscribe('ssap://com.webos.media/getForegroundAppInfo', (err, res) => {
+        if (err) {
+            log.debug('tv media/getForegroundAppInfo', err.message || err);
+            return;
+        }
+        log.debug('tv < media/getForegroundAppInfo', res);
+        const info = res && Array.isArray(res.foregroundAppInfo) ? res.foregroundAppInfo[0] : undefined;
+        pubStatus('playState', info && info.playState ? String(info.playState) : 'stopped');
     });
 
     lgtv.subscribePowerState((err, res) => {
