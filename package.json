@@ -1,24 +1,37 @@
 {
   "name": "lgtv2mqtt",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Interface between LG WebOS Smart TVs and MQTT",
   "main": "index.js",
   "preferGlobal": true,
-  "bin": "./index.js",
-  "engines": {
-    "node": ">=6.0.0"
+  "bin": {
+    "lgtv2mqtt": "index.js"
   },
-  "engineStrict": true,
+  "files": [
+    "index.js",
+    "config.js",
+    "lib/"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
-    "test": "camo-purge ; xo"
+    "start": "node index.js",
+    "lint": "eslint . && prettier --check .",
+    "format": "prettier --write . && eslint --fix .",
+    "test": "node --test",
+    "test:watch": "node --test --watch"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/hobbyquaker/lgtv2mqtt"
+    "url": "git+https://github.com/hobbyquaker/lgtv2mqtt.git"
   },
   "keywords": [
     "mqtt",
-    "home",
+    "smarthome",
+    "mqtt-smarthome",
+    "home-automation",
+    "home-assistant",
     "LG",
     "smart",
     "TV",
@@ -35,16 +48,16 @@
   },
   "homepage": "https://github.com/hobbyquaker/lgtv2mqtt",
   "dependencies": {
-    "lgtv2": "^1.4.1",
-    "mqtt": "^2.18.0",
+    "lgtv2": "^1.8.0",
+    "mqtt": "^5.5.0",
     "yalm": "^4.1.0",
-    "yargs": "^11.0.0"
-  },
-  "xo": {
-    "space": 4
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "camo-purge": "latest",
-    "xo": "latest"
+    "@eslint/js": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "globals": "^16.0.0",
+    "prettier": "^3.0.0"
   }
 }
