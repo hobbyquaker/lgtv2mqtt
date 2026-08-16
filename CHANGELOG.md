@@ -1,6 +1,8 @@
 # Changelog
 
-## 1.3.1
+## 1.3.2
+
+(1.3.1 was tagged but never published - its release build failed on a lint error.)
 
 ### Changed
 
