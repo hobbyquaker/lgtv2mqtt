@@ -1,16 +1,15 @@
 #!/usr/bin/env node
-'use strict';
 
 /**
  * Generates GitHub release notes for a tag: the matching CHANGELOG.md section first,
  * then all commits since the previous tag grouped by type with linked commit ids.
  *
- *   node .github/release-notes.js v1.3.2 > notes.md
+ *   node .github/release-notes.js v1.9.0 > notes.md
  */
 
-const {execFileSync} = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
+import {execFileSync} from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
 const tag = process.argv[2];
 if (!tag) {

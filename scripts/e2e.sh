@@ -37,6 +37,11 @@ pub lgtv/set/mute 0
 pub lgtv/set/power true
 pub lgtv/set/power false
 pub lgtv/set/bogus/method 1
+pub lgtv/set/sound_output external_arc
+pub lgtv/set/sound_output kitchen_radio
+pub lgtv/set/media pause
+pub lgtv/set/app netflix
+pub lgtv/set/unknown_item 1
 pub lgtv/set/media.controls/pause ''
 pub lgtv/set ''
 sleep 3

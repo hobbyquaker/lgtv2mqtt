@@ -1,7 +1,7 @@
-const {test, describe} = require('node:test');
-const assert = require('node:assert/strict');
+import {test, describe} from 'node:test';
+import assert from 'node:assert/strict';
 
-const {createLogger, detectFormat} = require('../lib/log.js');
+import {createLogger, detectFormat} from '../lib/log.js';
 
 function capture(options) {
     const lines = [];

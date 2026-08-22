@@ -3,8 +3,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-# --ignore-scripts: bufferutil/utf-8-validate (optional native addons of the websocket lib)
-# have no musl prebuilds and would need a compiler; they fall back to pure JS at runtime.
+# --ignore-scripts: no native add-ons are needed (lgtv2 2.x uses ws); skip any optional builds
 RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
 
 COPY index.js config.js ./

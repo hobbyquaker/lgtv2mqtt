@@ -1,6 +1,9 @@
-const pkg = require('./package.json');
+import yargs from 'yargs';
+import {hideBin} from 'yargs/helpers';
+import pkg from './package.json' with {type: 'json'};
 
-module.exports = require('yargs')
+export default yargs(hideBin(process.argv))
+    .scriptName('lgtv2mqtt')
     .usage('Usage: $0 [options]')
     .env('LGTV2MQTT')
     .option('tv', {
@@ -20,7 +23,7 @@ module.exports = require('yargs')
     .option('mac', {
         alias: 'm',
         type: 'string',
-        describe: 'mac address of the tv, needed for wake-on-lan (set/power true)',
+        describe: 'mac address of the tv for wake-on-lan. Usually not needed: learned from the tv after pairing',
     })
     .option('wol-address', {
         type: 'string',
@@ -30,16 +33,12 @@ module.exports = require('yargs')
     .option('verify-cert', {
         type: 'string',
         describe:
-            'verify the tv certificate: "lg" (must be an LG TV), "tofu" (pin the first seen certificate) or a sha256 fingerprint',
+            'verify the tv certificate: "lg" (must be an LG TV), "tofu" (pin the first seen certificate), a sha256 fingerprint or "off"',
+        default: 'lg',
     })
     .option('key-dir', {
         type: 'string',
         describe: 'directory for the pairing key (default: ~/.lgtv2, env LGTV2_KEY_DIR)',
-    })
-    .option('raw-set', {
-        type: 'boolean',
-        describe: 'accept raw ssap requests on <name>/set/<service>/<method> (disable with --no-raw-set)',
-        default: true,
     })
     .option('mqtt-url', {
         alias: ['u', 'url'],
@@ -61,6 +60,26 @@ module.exports = require('yargs')
         describe: 'instance name. used as mqtt client id and as prefix for topics',
         default: 'lgtv',
     })
+    .option('json-payloads', {
+        type: 'boolean',
+        describe: 'publish status as JSON {"val": ..., "ts": ..., "lc": ...} instead of plain values',
+        default: false,
+    })
+    .option('ha-discovery', {
+        type: 'boolean',
+        describe: 'publish Home Assistant MQTT discovery (use --no-ha-discovery to disable and clear)',
+        default: true,
+    })
+    .option('ha-prefix', {
+        type: 'string',
+        describe: 'Home Assistant discovery prefix',
+        default: 'homeassistant',
+    })
+    .option('raw-set', {
+        type: 'boolean',
+        describe: 'accept raw ssap requests on <name>/set/<service>/<method> (unrestricted remote api!)',
+        default: false,
+    })
     .option('verbosity', {
         alias: 'v',
         type: 'string',
@@ -77,16 +96,17 @@ module.exports = require('yargs')
         type: 'boolean',
         describe: 'stop, disable and remove the systemd service lgtv2mqtt@<name>. needs root',
     })
-    .example('$0 -t 192.168.1.20 -m aa:bb:cc:dd:ee:ff -u mqtt://broker', 'run in the foreground')
+    .example('$0 -t 192.168.1.20 -u mqtt://broker', 'run in the foreground')
     .example(
-        'sudo $0 --install -n tv-living -t 192.168.1.20 -m aa:bb:cc:dd:ee:ff -u mqtt://broker',
+        'sudo $0 --install -n tv-living -t 192.168.1.20 -u mqtt://broker',
         'install as service lgtv2mqtt@tv-living',
     )
     .epilog(
-        'Every option can also be set via environment variable, e.g. LGTV2MQTT_TV, LGTV2MQTT_MQTT_URL, LGTV2MQTT_MAC.\n' +
+        'Every option can also be set via environment variable, e.g. LGTV2MQTT_TV, LGTV2MQTT_MQTT_URL, LGTV2MQTT_NAME.\n' +
             pkg.homepage,
     )
-    .version()
+    .version(pkg.version)
     .help('help')
     .alias('h', 'help')
-    .strict().argv;
+    .strict()
+    .parse();

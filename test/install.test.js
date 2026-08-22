@@ -1,7 +1,7 @@
-const {test, describe} = require('node:test');
-const assert = require('node:assert/strict');
+import {test, describe} from 'node:test';
+import assert from 'node:assert/strict';
 
-const {unitFile, envFile, envVarName, instanceName} = require('../lib/install.js');
+import {unitFile, envFile, envVarName, instanceName} from '../lib/install.js';
 
 describe('envFile', () => {
     test('writes only set options as LGTV2MQTT_* variables, never the name', () => {
@@ -13,6 +13,9 @@ describe('envFile', () => {
             wolAddress: '255.255.255.255',
             verifyCert: '',
             rawSet: false,
+            jsonPayloads: true,
+            haDiscovery: false,
+            haPrefix: 'homeassistant',
             mqttUrl: 'mqtt://broker',
             mqttUsername: undefined,
             mqttPassword: null,
@@ -22,6 +25,8 @@ describe('envFile', () => {
         assert.match(out, /^LGTV2MQTT_MAC=aa:bb:cc:dd:ee:ff$/m);
         assert.match(out, /^LGTV2MQTT_MQTT_URL=mqtt:\/\/broker$/m);
         assert.match(out, /^LGTV2MQTT_RAW_SET=false$/m);
+        assert.match(out, /^LGTV2MQTT_JSON_PAYLOADS=true$/m);
+        assert.match(out, /^LGTV2MQTT_HA_DISCOVERY=false$/m);
         assert.doesNotMatch(out, /LGTV2MQTT_NAME|MQTT_USERNAME|MQTT_PASSWORD|TV_PORT|VERIFY_CERT/);
         assert.match(out, /lgtv2mqtt@lgtv\.service/);
     });
@@ -46,7 +51,7 @@ describe('helpers', () => {
     test('envVarName maps camelCase options', () => {
         assert.equal(envVarName('tv'), 'LGTV2MQTT_TV');
         assert.equal(envVarName('mqttUrl'), 'LGTV2MQTT_MQTT_URL');
-        assert.equal(envVarName('wolAddress'), 'LGTV2MQTT_WOL_ADDRESS');
+        assert.equal(envVarName('haDiscovery'), 'LGTV2MQTT_HA_DISCOVERY');
     });
 
     test('instanceName rejects names systemd or the topic scheme cannot take', () => {

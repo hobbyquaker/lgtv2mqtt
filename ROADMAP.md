@@ -10,9 +10,9 @@ they are not repeated here. lgtv2mqtt is the **second** adapter to be migrated
 (after the lgsb2mqtt pilot). Decisions specific to this repo are numbered T-n,
 open questions continue the fleet numbering (OQ-19+).
 
-**Order of work: ~~1.2.0 on lgtv2 ^1.8~~ (released) → fleet Phase 1/2 (spec +
-core lib, lgsb2mqtt pilot) → 2.0 here on the core lib with friendly topics + HA
-discovery, coordinated with lgtv2 2.0.**
+**Order of work: ~~1.2.0 on lgtv2 ^1.8~~ (released) → ~~2.0 with friendly topics + HA
+discovery on lgtv2 2.0~~ (done, without the core lib — D-1/Phase 2 postponed, see
+T-8) → fleet Phase 1/2 (spec + core lib) extracted from lgsb2mqtt 1.0 / lgtv2mqtt 2.0.**
 
 > **Update 2026-08: lgtv2 1.7.0 / 1.8.0 are released** (see
 > [lgtv2 CHANGELOG](https://github.com/hobbyquaker/lgtv2/blob/master/CHANGELOG.md)).
@@ -164,23 +164,25 @@ lgtv2mqtt does not expose yet. ★ = most requested.
 
 ## 3. Decisions (repo-specific)
 
-| ID  | Decision                                                                                                                                                                         |
-| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-1 | Keep `lgtv2` as a separate, owned library; modernize it (wss/TLS option, promises, IPv6, PR #42) in lockstep. Not absorbed into this repo.                                       |
-| T-2 | ~~1.2.0 is a pure hotfix on the existing code base~~ — superseded by T-6: lgtv2 1.8 requires node ≥20 anyway, so the hotfix and the hygiene release are one release.             |
-| T-3 | ~~`--insecure` flag~~ — superseded: the lib's `host` option auto-falls back wss→ws. Only pass-throughs are offered: `--tv-port` (pin a port) and `--verify-cert lg\|tofu\|<fp>`. |
-| T-4 | Raw SSAP passthrough (`set/<service>/<method>`) stays, but behind `--raw-set` (default on in 1.x for compatibility, off in 2.0) with a security note.                            |
-| T-5 | Power-on via Wake-on-LAN inside the adapter (`--mac`, lib `wake()`), not via a separate tool. `set/power true` → `wake()`, `false` → `system/turnOff`.                           |
-| T-6 | **1.2.0 = "lgtv2 ^1.8 release"**: one release merging the former 1.2.0 + 1.3.0 lists, no topic renames (those are 2.0). Additive topics (`status/power`, `set/power`) are fine.  |
-| T-7 | `--verify-cert` defaults to `lg` in 2.0 (authenticates "an LG TV"); opt-in in 1.2.0 to avoid surprising anyone behind proxies/port-forwards.                                     |
+| ID   | Decision                                                                                                                                                                                                                                                                             |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T-1  | Keep `lgtv2` as a separate, owned library; modernize it (wss/TLS option, promises, IPv6, PR #42) in lockstep. Not absorbed into this repo.                                                                                                                                           |
+| T-2  | ~~1.2.0 is a pure hotfix on the existing code base~~ — superseded by T-6: lgtv2 1.8 requires node ≥20 anyway, so the hotfix and the hygiene release are one release.                                                                                                                 |
+| T-3  | ~~`--insecure` flag~~ — superseded: the lib's `host` option auto-falls back wss→ws. Only pass-throughs are offered: `--tv-port` (pin a port) and `--verify-cert lg\|tofu\|<fp>`.                                                                                                     |
+| T-4  | Raw SSAP passthrough (`set/<service>/<method>`) stays, but behind `--raw-set` (default on in 1.x for compatibility, off in 2.0) with a security note.                                                                                                                                |
+| T-5  | Power-on via Wake-on-LAN inside the adapter (`--mac`, lib `wake()`), not via a separate tool. `set/power true` → `wake()`, `false` → `system/turnOff`.                                                                                                                               |
+| T-6  | **1.2.0 = "lgtv2 ^1.8 release"**: one release merging the former 1.2.0 + 1.3.0 lists, no topic renames (those are 2.0). Additive topics (`status/power`, `set/power`) are fine.                                                                                                      |
+| T-7  | `--verify-cert` defaults to `lg` in 2.0 (authenticates "an LG TV"); opt-in in 1.2.0 to avoid surprising anyone behind proxies/port-forwards. **Done in 2.0** (`--verify-cert off` restores 1.x).                                                                                     |
+| T-8  | **2.0 without the core lib**: the shared parts (config/env, `StatusTracker`, `parsePayload`, discovery builder, systemd template install, journald logging) are implemented identically in lgsb2mqtt 1.0 and lgtv2mqtt 2.0 and are the extraction candidates for the core lib later. |
+| T-9  | **Item names are snake_case** (`play_state`, `sound_output`, `input_list`), same as lgsb2mqtt 1.0 → settles OQ-19 for the fleet.                                                                                                                                                     |
+| T-10 | Maintenance topics (D-9: `maintenance/set/loglevel`, `restart`) are **not** in 2.0; they come with the core lib. `<name>/info` is published.                                                                                                                                         |
 
 ---
 
 ## 4. Open questions
 
-- **OQ-19 — Item naming convention** for the fleet: camelCase (current
-  lgtv2mqtt: `foregroundApp`) vs. snake_case (lgsb2mqtt draft: `input_list`).
-  Must be settled in the spec before 2.0; proposal: snake_case.
+- **OQ-19 — Item naming convention** — **decided: snake_case** (T-9), used by
+  lgsb2mqtt 1.0 and lgtv2mqtt 2.0.
 - **OQ-20 — Pre-2023 TVs** — **decided in lgtv2 1.7 (OQ-25)**: auto-fallback
   in the lib; the working port is remembered, a combined `ECONNFAILED` error
   is emitted when both fail. Nothing to do here beyond `--tv-port` for pinning.
@@ -247,21 +249,32 @@ Hygiene (copy from lgsb2mqtt 0.1.0):
 - [ ] Confirm the GHCR image build from the release workflow; close #6, #10,
       #15, #17, #18 with a pointer to 1.2.0.
 
-### 2.0.0 — on the core lib (fleet Phase 3)
+### 2.0.0 — friendly topics + HA discovery on lgtv2 2.0 (T-8) — done
 
-- [ ] Port to ESM + core lib (after the lgsb2mqtt 1.0 pilot); coordinate with
-      lgtv2 2.0 (ESM, `ws` transport, `changed` synthesis removed → switch the
-      volume subscription to `audio/getStatus`).
-- [ ] `--verify-cert lg` becomes the default (T-7); `--mac` optional once
-      lgtv2 learns the MAC itself (lgtv2 OQ-31).
-- [ ] Friendly topic set from section 2 (power, screen, volume, mute,
-      sound_output, input/input_list, app/app_list, channel, media, toast,
-      buttons); `--json-payloads`; raw passthrough behind `--raw-set` (T-4).
-- [ ] HA discovery on by default: `switch` power, `number` volume, `switch`
-      mute, `select` input / app / sound_output, `sensor` media state / channel,
-      `button` entities for remote keys, plus the media_player payload (OQ-22).
-- [ ] `<name>/info` + maintenance topics per spec.
-- [ ] Unit tests for payload parsing (volume/mute/power shapes across firmware).
-- [ ] Migration table old → new topics in CHANGELOG.
-- [ ] Triage remaining issues (#12 web browser/pip: out of scope; #14 HACS:
-      answered by HA discovery + Docker image).
+- [x] ES module on lgtv2 2.0 (`ws` transport, auto-learned MAC → `--mac` optional),
+      node ^20.19 || ^22.12 || >= 24. No core lib (T-8).
+- [x] `--verify-cert lg` is the default (T-7).
+- [x] Friendly snake_case topic set (T-9): `power`, `screen`, `volume`, `mute`,
+      `sound_output`, `input`/`input_list`, `app`/`app_list`, `channel`/`channel_name`,
+      `play_state`, `model`, `firmware`, `mac`; set-only `volume_up/down`, `channel_up/down`,
+      `media`, `toast`, `text`/`enter`/`delete`, `button`, pointer events, `youtube`.
+      `lib/commands.js` is the pure, unit-tested mapping.
+- [x] `--json-payloads` (`StatusTracker`), status re-published after an MQTT reconnect.
+- [x] Raw passthrough behind `--raw-set`, **off by default** (T-4).
+- [x] HA discovery on by default (`lib/hadiscovery.js`): switches power/screen/mute, number
+      volume, selects sound_output/input/app (options from the TV), sensors, `notify` toast,
+      `button` entities. Power switch available at `connected >= 1` so HA can wake the TV.
+- [x] `<name>/info`. Maintenance topics deferred (T-10).
+- [x] Migration table old → new topics in CHANGELOG; README rewritten.
+- [x] Unit tests for commands, discovery, payload/StatusTracker, toast, log, install (48).
+- [x] Issues triaged and closed (1.2.0/1.3.0).
+- [ ] Verify on the real TV: `sound_output`, `input_list`/`input`, `app_list`/`app`,
+      `play_state`, `set/screen`, `set/text`, HA entities incl. wake via the power switch.
+- [ ] Release 2.0.0 (tag → npm + GHCR + GitHub release).
+
+### After 2.0
+
+- [ ] OQ-22: media_player payload for a community MQTT media player component.
+- [ ] lgtv2 OQ-27 PIN pairing once the lib supports it.
+- [ ] Fleet Phase 1/2: extract the shared code of lgsb2mqtt 1.0 / lgtv2mqtt 2.0 into the
+      core lib + spec; then maintenance topics (T-10).

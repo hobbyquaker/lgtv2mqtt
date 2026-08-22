@@ -1,11 +1,11 @@
-const {test, describe, before, after} = require('node:test');
-const assert = require('node:assert/strict');
-const http = require('node:http');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
+import {test, describe, before, after} from 'node:test';
+import assert from 'node:assert/strict';
+import http from 'node:http';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
-const {toastPayload, iconExtension} = require('../lib/toast.js');
+import {toastPayload, iconExtension} from '../lib/toast.js';
 
 const PNG = Buffer.from('89504e470d0a1a0a0000000d49484452', 'hex');
 
