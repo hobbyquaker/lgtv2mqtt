@@ -50,7 +50,7 @@
   "homepage": "https://github.com/hobbyquaker/lgtv2mqtt",
   "dependencies": {
     "lgtv2": "^2.0.0",
-    "mqtt-interfaces-core": "file:../../mqtt-interfaces-core"
+    "mqtt-interfaces-core": "^0.1.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
