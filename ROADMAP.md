@@ -272,7 +272,25 @@ Hygiene (copy from lgsb2mqtt 0.1.0):
       `play_state`, `set/screen`, `set/text`, HA entities incl. wake via the power switch.
 - [ ] Release 2.0.0 (tag → npm + GHCR + GitHub release).
 
-### After 2.0
+### 3.0.0 — on mqtt-interfaces-core (2026-08-22)
+
+The shared parts of 2.0 (`config.js`, `lib/log.js`, `lib/payload.js`, the discovery
+scaffold, `lib/install.js`, the MQTT/connected/info/shutdown wiring of `index.js`) were
+extracted into [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core)
+(core decision C-1: lgtv2mqtt is the reference adapter, lgsb2mqtt follows). 3.0 is the
+same adapter on top of the core lib:
+
+- Topics unchanged from 2.0 (no migration table needed). New: `maintenance/set/loglevel`,
+  `maintenance/set/restart` (T-10 done), `--no-maintenance`, `--config-schema`,
+  `--mqtt-client-id-prefix`, `--mqtt-tls-ca`, unprefixed `MQTT_*` env fallback,
+  `EnvironmentFile=-/etc/mqtt-interfaces/broker.env` in the unit.
+- `<name>/info` gains `spec`, `maintenance`; keeps `tv`.
+- Unit uses `Restart=always` (restart via mqtt works); re-run `--install` to upgrade.
+- Major bump because of the dependency/behaviour change, not because of topics.
+- Keeps: `lib/commands.js`, `lib/toast.js`, the TV wiring and the entity map
+  (`lib/hadiscovery.js` shrinks to the entity map on the core scaffold).
+
+### After 3.0
 
 - [ ] OQ-22: media_player payload for a community MQTT media player component.
 - [ ] lgtv2 OQ-27 PIN pairing once the lib supports it.
