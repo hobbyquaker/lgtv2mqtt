@@ -1,5 +1,30 @@
 # Changelog
 
+## 3.0.0
+
+Same adapter on top of [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core)
+(mqtt-smarthome spec 2.x). **Topics are unchanged from 2.0** — no migration needed.
+
+### Breaking
+
+- Depends on `mqtt-interfaces-core`; the shared code (`config.js`, `lib/log.js`, `lib/payload.js`,
+  the systemd template, the MQTT/connected/info/shutdown wiring) moved there.
+- systemd unit now uses `Restart=always` (so a restart over mqtt works) and reads
+  `/etc/mqtt-interfaces/broker.env` before the instance file. Re-run `sudo lgtv2mqtt --install ...`
+  to upgrade an existing unit.
+
+### Added
+
+- `<name>/maintenance/set/loglevel` (`error`/`warn`/`info`/`debug`) and
+  `<name>/maintenance/set/restart` (graceful shutdown + exit 0; the supervisor restarts the
+  process). `--no-maintenance` disables both — see the security note in the README.
+- `<name>/info` carries `spec` (implemented mqtt-smarthome spec version) and `maintenance`.
+- `--config-schema` prints a JSON Schema of all options (for the fleet manager).
+- `--mqtt-client-id-prefix`, `--mqtt-tls-ca`; unprefixed `MQTT_URL`, `MQTT_USERNAME`,
+  `MQTT_PASSWORD`, `MQTT_CLIENT_ID_PREFIX`, `MQTT_TLS_CA` environment variables are used as
+  fallback when the `LGTV2MQTT_*` variants are not set (shared broker config).
+- Env vars are typed: `LGTV2MQTT_TV_PORT=3000` is a number, `LGTV2MQTT_RAW_SET=1` a boolean.
+
 ## 2.0.0
 
 Friendly topics, Home Assistant discovery, ES module on lgtv2 2.0. Same layout as lgsb2mqtt 1.0.

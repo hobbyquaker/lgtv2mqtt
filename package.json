@@ -1,6 +1,6 @@
 {
   "name": "lgtv2mqtt",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Interface between LG webOS Smart TVs and MQTT, with Home Assistant discovery",
   "type": "module",
   "main": "index.js",
@@ -50,8 +50,7 @@
   "homepage": "https://github.com/hobbyquaker/lgtv2mqtt",
   "dependencies": {
     "lgtv2": "^2.0.0",
-    "mqtt": "^5.5.0",
-    "yargs": "^17.7.2"
+    "mqtt-interfaces-core": "file:../../mqtt-interfaces-core"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

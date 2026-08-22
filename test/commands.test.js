@@ -2,7 +2,7 @@ import {test, describe} from 'node:test';
 import assert from 'node:assert/strict';
 
 import {commandFor, SET_ITEMS} from '../lib/commands.js';
-import {StatusTracker} from '../lib/payload.js';
+import {StatusTracker} from 'mqtt-interfaces-core';
 
 const state = new StatusTracker();
 state.update('input_list', [

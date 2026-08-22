@@ -38,24 +38,23 @@ the 1.x → 2.0 migration table is in CHANGELOG.md.
 
 ## Code layout (ES modules, node >= 20.19)
 
-- `index.js` — wiring: MQTT connection, set-topic dispatch, TV subscriptions (volume,
+- `index.js` — `createAdapter()` from the core (MQTT, connected, info, maintenance, discovery
+  publishing, shutdown) plus the TV part: set dispatch, TV subscriptions (volume,
   sound output, foreground app → input, media play state, power state, current channel while
   live TV is active), device info fetch on connect, discovery (re)publishing, shutdown.
 - `lib/commands.js` — `commandFor(item, value, state)`: pure mapping of `set/<item>` to a
   TV action (`request`/`button`/`pointer`/`wake`/`toast`). Extend here for new set items.
-- `lib/hadiscovery.js` — `buildDiscovery()` builds the device-based HA discovery payload
-  from the last known status values (`input_list`, `app_list`, `model`, ... trigger a
+- `lib/hadiscovery.js` — `discoveryModel()` builds the device block + entity map (core
+  `entity()` helpers) from the last known status values (`input_list`, `app_list`, `model`, ... trigger a
   re-publish via `DISCOVERY_TRIGGERS` in index.js).
-- `lib/payload.js` — `parsePayload`, `toBoolean`, `toVolume`, `StatusTracker` (last values,
-  plain vs `{val, ts, lc}` payloads, change detection).
+- `parsePayload`, `toBoolean`, `toVolume`, `StatusTracker`, the logger, the MQTT/connected/info/
+  maintenance/shutdown wiring and the systemd template come from **mqtt-interfaces-core**
+  (`../../mqtt-interfaces-core` when checked out next to this repo). Generic fixes go there.
 - `lib/toast.js` — `set/toast` payload builder, loads `icon` from URL/file as base64.
-- `lib/log.js` — leveled logger; journald format (`<N>` priority prefix, no timestamp) when
-  stdout is the systemd journal. Never add timestamps or identifiers to messages yourself.
-- `lib/install.js` — `--install`/`--uninstall`: systemd template unit `lgtv2mqtt@.service`,
-  instance = `--name`; env file `/etc/lgtv2mqtt/<name>.env`, state dir
-  `/var/lib/lgtv2mqtt/<name>` (`LGTV2_KEY_DIR`). Root-only parts are not unit tested.
-- `config.js` — yargs CLI; every option also via `LGTV2MQTT_*` env vars. Exports camelCased
-  (`config.mqttUrl`, `config.haDiscovery`).
+- `lib/install.js` — core `createInstaller()` for `lgtv2mqtt@<name>` plus `copyPairingKey()`
+  (state dir `/var/lib/lgtv2mqtt/<name>` = `LGTV2_KEY_DIR`). Root-only parts are not unit tested.
+- `config.js` — adapter options (`OPTIONS`) on top of the core `parseConfig()`; every option also
+  via `LGTV2MQTT_*` env vars. Exports camelCased (`config.mqttUrl`, `config.haDiscovery`).
 - `test/` — node:test unit tests (`npm test`) for every `lib/` module.
 - `scripts/e2e.sh` — manual end-to-end smoke test against lgtv2's mock TV (needs `../../lgtv2`
   checked out with dev deps) and a throwaway mosquitto container.

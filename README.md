@@ -52,6 +52,10 @@ variable (`LGTV2MQTT_TV`, `LGTV2MQTT_MQTT_URL`, `LGTV2MQTT_NAME`, ...).
 | `--ha-discovery`                     | on                 | Home Assistant MQTT discovery (`--no-ha-discovery` disables and clears it)                   |
 | `--ha-prefix`                        | `homeassistant`    | discovery prefix                                                                             |
 | `--raw-set`                          | off                | accept raw SSAP requests on `set/<service>/<method>` (see below)                             |
+| `--no-maintenance`                   | (on)               | disable the `maintenance/set/loglevel` and `restart` topics (see below)                      |
+| `--mqtt-client-id-prefix`            |                    | prefix for the mqtt client id                                                                |
+| `--mqtt-tls-ca`                      |                    | CA certificate file for `mqtts://` brokers                                                   |
+| `--config-schema`                    |                    | print a JSON Schema of all options and exit                                                  |
 | `-v, --verbosity`                    | `info`             | `error`, `warn`, `info`, `debug`                                                             |
 
 ### Docker
@@ -122,7 +126,8 @@ Retained status reports (plain values; lists as JSON). With `--json-payloads` ev
 | `firmware`     | string |     |                                                                                                     |
 | `mac`          | string |     | MAC address learned from the TV                                                                     |
 
-`<name>/info` (retained JSON) describes the running instance: version, node, host, pid, start time.
+`<name>/info` (retained JSON) describes the running instance: adapter name and version, implemented
+mqtt-smarthome spec version, node version, host, pid, start time, whether maintenance topics are on, tv.
 
 ### `<name>/set/<item>`
 
@@ -155,6 +160,16 @@ mosquitto_pub -t lgtv/set/input -m HDMI_2
 mosquitto_pub -t lgtv/set/toast -m '{"message": "Doorbell", "icon": "https://example.com/bell.png"}'
 mosquitto_pub -t lgtv/set/power -m false
 ```
+
+### `<name>/maintenance/set/<command>`
+
+| command    | payload                            |                                                                                           |
+| ---------- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| `loglevel` | `error`, `warn`, `info` or `debug` | change the log level at runtime (e.g. to see `tv >`/`tv <` traffic without a restart)     |
+| `restart`  | anything                           | graceful shutdown (`connected 0`) and exit 0; systemd (`Restart=always`) / Docker restart |
+
+Anyone who can publish to your broker can use these. Use broker authentication and ACLs, or
+disable them with `--no-maintenance`.
 
 ### Raw SSAP requests
 

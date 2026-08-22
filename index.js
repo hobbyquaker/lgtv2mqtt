@@ -1,59 +1,15 @@
 #!/usr/bin/env node
 
-import os from 'node:os';
-import mqttLib from 'mqtt';
 import LGTV from 'lgtv2';
-import log from './lib/log.js';
+import {createAdapter} from 'mqtt-interfaces-core';
 import config from './config.js';
 import pkg from './package.json' with {type: 'json'};
-import {parsePayload, StatusTracker} from './lib/payload.js';
 import {toastPayload} from './lib/toast.js';
 import {commandFor} from './lib/commands.js';
-import {buildDiscovery} from './lib/hadiscovery.js';
+import {discoveryModel} from './lib/hadiscovery.js';
+import {handle as handleInstall} from './lib/install.js';
 
-if (config.install || config.uninstall) {
-    const {installService, uninstallService} = await import('./lib/install.js');
-    const plain = (...args) => console.log(...args);
-    try {
-        if (config.uninstall) {
-            uninstallService(config, plain);
-        } else {
-            installService(config, plain);
-        }
-        process.exit(0);
-    } catch (err) {
-        console.error('error:', err.message);
-        process.exit(1);
-    }
-}
-
-const topicPrefix = config.name;
-const connectedTopic = topicPrefix + '/connected';
-
-let mqttConnected = false;
-let tvConnected = false;
-let shuttingDown = false;
-let channelSubscription = null;
-const startedAt = Date.now();
-
-/** last known friendly values, also produces plain or {val, ts, lc} payloads */
-const status = new StatusTracker({json: config.jsonPayloads});
-
-/** items whose change requires a new discovery payload (options / device info) */
-const DISCOVERY_TRIGGERS = new Set(['input_list', 'app_list', 'model', 'firmware', 'mac']);
-let discoveryDirty = true;
-
-log.setLevel(config.verbosity);
-
-log.info(pkg.name + ' ' + pkg.version + ' starting');
-log.info('mqtt trying to connect', config.mqttUrl);
-
-const mqtt = mqttLib.connect(config.mqttUrl, {
-    clientId: config.name + '_' + Math.random().toString(16).slice(2, 10),
-    username: config.mqttUsername,
-    password: config.mqttPassword,
-    will: {topic: connectedTopic, payload: '0', retain: true},
-});
+handleInstall(config);
 
 if (config.keyDir) {
     process.env.LGTV2_KEY_DIR = config.keyDir;
@@ -76,141 +32,33 @@ if (config.tvUrl) {
 const tvLabel = config.tvUrl || config.tv;
 
 const lgtv = new LGTV(lgtvOptions);
+let channelSubscription = null;
 
-/*
- * MQTT publishing
- */
+/** Items that may be sent with an empty payload. */
+const EMPTY_OK = ['volume_up', 'volume_down', 'channel_up', 'channel_down', 'click', 'enter'];
 
-function mqttPub(topic, payload, options) {
-    if (payload !== null && typeof payload === 'object') {
-        payload = JSON.stringify(payload);
-    }
-    log.debug('mqtt >', topic, payload);
-    mqtt.publish(topic, String(payload), options);
-}
-
-function publishConnected() {
-    if (!mqttConnected) {
-        return;
-    }
-    mqttPub(connectedTopic, tvConnected ? '2' : '1', {retain: true});
-}
-
-/** Publish a friendly status item (retained); tracks last values for discovery and json payloads. */
-function pubStatus(item, value, {retain = true} = {}) {
-    const {payload, changed} = status.update(item, value);
-    if (mqttConnected) {
-        mqttPub(`${topicPrefix}/status/${item}`, payload, {retain});
-    }
-    if (changed && DISCOVERY_TRIGGERS.has(item)) {
-        discoveryDirty = true;
-        publishDiscoveryIfDirty();
-    }
-    return changed;
-}
-
-/** Re-publish every known status (after an mqtt reconnect). */
-function republishStatus() {
-    for (const [item, entry] of status.state) {
-        mqttPub(`${topicPrefix}/status/${item}`, config.jsonPayloads ? entry : entry.val, {retain: true});
-    }
-}
-
-function publishInfo() {
-    if (!mqttConnected) {
-        return;
-    }
-    mqttPub(
-        `${topicPrefix}/info`,
-        {
-            name: pkg.name,
-            version: pkg.version,
-            node: process.version,
-            host: os.hostname(),
-            pid: process.pid,
-            started: new Date(startedAt).toISOString(),
-            tv: tvLabel,
-        },
-        {retain: true},
-    );
-}
-
-function publishDiscoveryIfDirty() {
-    if (!config.haDiscovery || !discoveryDirty || !mqttConnected) {
-        return;
-    }
-    discoveryDirty = false;
-    const {topic, payload} = buildDiscovery({
-        name: config.name,
-        prefix: config.haPrefix,
-        get: (item) => status.get(item),
-        pkg,
-        jsonPayloads: config.jsonPayloads,
-    });
-    log.info('mqtt publishing home assistant discovery', topic);
-    mqttPub(topic, payload, {retain: true});
-}
-
-function clearDiscovery() {
-    const {topic} = buildDiscovery({name: config.name, prefix: config.haPrefix, get: () => undefined, pkg});
-    mqttPub(topic, '', {retain: true});
-}
-
-mqtt.on('connect', () => {
-    const reconnect = mqttConnected;
-    mqttConnected = true;
-    log.info('mqtt connected', config.mqttUrl);
-    publishConnected();
-    publishInfo();
-
-    const setTopic = topicPrefix + '/set/#';
-    log.info('mqtt subscribe', setTopic);
-    mqtt.subscribe(setTopic);
-
-    if (config.haDiscovery) {
-        discoveryDirty = true;
-        publishDiscoveryIfDirty();
-    } else {
-        clearDiscovery();
-    }
-    if (reconnect || status.state.size > 0) {
-        republishStatus();
-    }
+const adapter = createAdapter({
+    pkg,
+    config,
+    deviceLabel: 'tv',
+    info: {tv: tvLabel},
+    discovery: ({get}) => discoveryModel({name: config.name, get, jsonPayloads: config.jsonPayloads}),
+    // items whose change requires a new discovery payload (options / device info)
+    discoveryTriggers: ['input_list', 'app_list', 'model', 'firmware', 'mac'],
+    onSet: handleSet,
+    onShutdown: () => {
+        unsubscribeChannel();
+        return lgtv.disconnect();
+    },
 });
-
-mqtt.on('close', () => {
-    if (mqttConnected) {
-        mqttConnected = false;
-        log.info('mqtt closed', config.mqttUrl);
-    }
-});
-
-mqtt.on('error', (err) => {
-    log.error('mqtt', err.message || err);
-});
-
-mqtt.on('message', (topic, payload) => {
-    payload = payload.toString();
-    log.debug('mqtt <', topic, payload);
-
-    // <name>/set/<item>  (friendly)  or  <name>/set/<service>/<method>  (raw ssap, opt-in)
-    const [prefix, action, ...parts] = topic.split('/');
-    if (prefix !== topicPrefix || action !== 'set' || parts.length < 1 || parts.includes('')) {
-        log.warn('mqtt ignoring unexpected topic', topic);
-        return;
-    }
-
-    const value = parsePayload(payload);
-    handleSet(parts, value, topic).catch((err) => {
-        log.warn('tv', parts.join('/'), 'failed:', err.message || err);
-    });
-});
+const {log, pubStatus} = adapter;
 
 /*
  * set handling
  */
 
 async function handleSet(parts, value, topic) {
+    // <name>/set/<item>  (friendly)  or  <name>/set/<service>/<method>  (raw ssap, opt-in)
     if (parts.length > 1) {
         if (!config.rawSet) {
             log.warn('mqtt ignoring', topic, '(raw set topics disabled, see --raw-set)');
@@ -221,17 +69,14 @@ async function handleSet(parts, value, topic) {
     }
 
     const item = parts[0];
-    if (
-        value === undefined &&
-        !['volume_up', 'volume_down', 'channel_up', 'channel_down', 'click', 'enter'].includes(item)
-    ) {
+    if (value === undefined && !EMPTY_OK.includes(item)) {
         log.warn('mqtt ignoring empty payload on', topic);
         return;
     }
 
     let command;
     try {
-        command = commandFor(item, value, status);
+        command = commandFor(item, value, adapter.status);
     } catch (err) {
         log.warn('mqtt set', item, String(value), '-', err.message);
         return;
@@ -305,9 +150,8 @@ function publishMac(macs) {
 }
 
 lgtv.on('connect', async () => {
-    tvConnected = true;
     log.info('tv connected', tvLabel);
-    publishConnected();
+    adapter.setDeviceConnected(true);
     publishMac(lgtv.macs);
 
     subscribe('ssap://audio/getVolume', (res) => {
@@ -404,7 +248,7 @@ async function fetchDeviceInfo() {
                 sw.minor_ver !== undefined ? `${sw.major_ver}.${sw.minor_ver}` : String(sw.major_ver),
             );
         }
-        if (!status.get('model') && sw.model_name) {
+        if (!adapter.get('model') && sw.model_name) {
             pubStatus('model', sw.model_name);
         }
     }
@@ -415,7 +259,7 @@ async function fetchDeviceInfo() {
             'input_list',
             inputs.devices.map((d) => ({id: d.id, label: d.label, appId: d.appId, connected: Boolean(d.connected)})),
         );
-        publishInput(status.get('app'));
+        publishInput(adapter.get('app'));
     }
 
     const apps = await get('ssap://com.webos.applicationManager/listLaunchPoints');
@@ -432,7 +276,7 @@ async function fetchDeviceInfo() {
 
 /** Derive status/input (external input id) from the foreground app id. */
 function publishInput(appId) {
-    const inputs = status.get('input_list');
+    const inputs = adapter.get('input_list');
     if (!Array.isArray(inputs) || !appId) {
         return;
     }
@@ -477,10 +321,9 @@ function unsubscribeChannel() {
 
 lgtv.on('close', () => {
     unsubscribeChannel();
-    if (tvConnected && !shuttingDown) {
-        tvConnected = false;
+    if (adapter.deviceConnected && !adapter.shuttingDown) {
         log.info('tv disconnected', tvLabel);
-        publishConnected();
+        adapter.setDeviceConnected(false);
         // a tv in standby does not answer anymore, so no power state update will arrive
         pubStatus('power', 'off');
         pubStatus('screen', false);
@@ -489,7 +332,7 @@ lgtv.on('close', () => {
 });
 
 lgtv.on('error', (err) => {
-    if (shuttingDown) {
+    if (adapter.shuttingDown) {
         log.debug('tv', err.message || err);
         return;
     }
@@ -509,37 +352,4 @@ lgtv.on('error', (err) => {
     log[unreachable ? 'warn' : 'error']('tv', (err.message || String(err)) + hint);
 });
 
-/*
- * shutdown
- */
-
-function shutdown(signal) {
-    if (shuttingDown) {
-        return;
-    }
-    shuttingDown = true;
-    log.info('received', signal, '- shutting down');
-
-    const exit = () => process.exit(0);
-    const timer = setTimeout(exit, 2000);
-
-    unsubscribeChannel();
-    lgtv.disconnect().catch(() => {});
-
-    if (mqttConnected) {
-        mqtt.publish(connectedTopic, '0', {retain: true}, () => {
-            mqtt.end(false, {}, () => {
-                clearTimeout(timer);
-                exit();
-            });
-        });
-    } else {
-        mqtt.end(true, {}, () => {
-            clearTimeout(timer);
-            exit();
-        });
-    }
-}
-
-process.on('SIGINT', () => shutdown('SIGINT'));
-process.on('SIGTERM', () => shutdown('SIGTERM'));
+adapter.start();
