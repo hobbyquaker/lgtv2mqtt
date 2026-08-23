@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.1
+
+### Changed
+
+- mqtt-interfaces-core 0.6.1: `--config-schema` marks `--mqtt-password` as secret, `--uninstall`
+  no longer needs the other options; `package.json` carries the `mqttInterfaces` field so she's
+  Services page can describe the adapter (listed there by its dependency on the core).
+
 ## 3.0.0
 
 Same adapter on top of [mqtt-interfaces-core](https://github.com/hobbyquaker/mqtt-interfaces-core)
