@@ -39,9 +39,23 @@ const log = git('log', range, '--no-merges', '--format=%H%x1f%s%x1f%an');
 const commits = log
     ? log.split('\n').map((line) => {
           const [sha, subject, author] = line.split('\x1f');
-          return {sha, subject, author};
+          return {sha, subject: cleanSubject(subject), author};
       })
     : [];
+
+/**
+ * A commit subject as it should read in the notes: without the Co-authored-by trailer, and with
+ * any literal "\n" turned into a real line break — a `-m` written with an escape the shell never
+ * interpreted leaves the whole message, trailer included, sitting in the subject.
+ */
+function cleanSubject(subject) {
+    return String(subject)
+        .replace(/\\r\\n|\\n|\\r/g, '\n')
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line) => line && !/^co-authored-by:/i.test(line))
+        .join('\n');
+}
 
 // order matters: the first matching group wins, output order is fixed below
 const GROUPS = [
@@ -106,7 +120,10 @@ for (const [title, list] of grouped) {
     out.push(`### ${title}`, '');
     for (const c of list) {
         const short = c.sha.slice(0, 7);
-        out.push(`- ${c.subject} ([${short}](${repoUrl}/commit/${c.sha}))`);
+        const [first, ...rest] = c.subject.split('\n');
+        // two trailing spaces make a hard line break inside the list item
+        out.push(`- ${first} ([${short}](${repoUrl}/commit/${c.sha}))` + (rest.length > 0 ? '  ' : ''));
+        rest.forEach((line, index) => out.push('  ' + line + (index < rest.length - 1 ? '  ' : '')));
     }
     out.push('');
 }
