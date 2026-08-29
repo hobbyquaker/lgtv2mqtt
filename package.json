@@ -1,7 +1,7 @@
 {
   "name": "lgtv2mqtt",
-  "version": "3.0.1",
-  "description": "Interface between LG webOS Smart TVs and MQTT, with Home Assistant discovery",
+  "version": "3.0.2",
+  "description": "Interface between LG webOS Smart TVs and MQTT",
   "type": "module",
   "main": "index.js",
   "preferGlobal": true,
@@ -52,7 +52,7 @@
     "spec": "2.0",
     "envPrefix": "LGTV2MQTT",
     "needs": [
-      "network-host"
+      "network"
     ],
     "serviceExtra": []
   },

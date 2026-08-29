@@ -5,7 +5,7 @@
 [![CI](https://github.com/hobbyquaker/lgtv2mqtt/actions/workflows/ci.yml/badge.svg)](https://github.com/hobbyquaker/lgtv2mqtt/actions/workflows/ci.yml)
 [![License][mit-badge]][mit-url]
 
-> Interface between LG webOS Smart TVs and MQTT 📺 — with Home Assistant discovery
+> Interface between LG webOS Smart TVs and MQTT 📺
 
 Works with current TVs (2023+ firmware, `wss://` on port 3001) as well as older models
 (`ws://` on port 3000). Built on [lgtv2](https://github.com/hobbyquaker/lgtv2).
