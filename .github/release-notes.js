@@ -67,10 +67,14 @@ const GROUPS = [
         title: 'Documentation',
         test: /^(docs?|readme|changelog|roadmap)\b|\b(readme|changelog|roadmap|documentation|CLAUDE\.md|AGENTS\.md)\b/i,
     },
+    {
+        title: 'Dependencies',
+        test: /^(deps?|dependencies|lockfile|bump)\b|\b(deps|dependenc(y|ies)|lockfile|package-lock|npm audit|depend on)\b/i,
+    },
     {title: 'Features', test: /^(feat|add|new|\d+\.\d+\.\d+)\b|^(add|implement|introduce|support)\s/i},
     {title: 'Fixes', test: /^(fix|bug|hotfix)\b|\b(fix|fixes|fixed|crash|normalize|handle|guard)\b/i},
 ];
-const ORDER = ['Features', 'Fixes', 'Documentation', 'Tests & tooling'];
+const ORDER = ['Features', 'Fixes', 'Documentation', 'Dependencies', 'Tests & tooling'];
 const OTHER = 'Other';
 const SKIP = /^(bump version|release|v?\d+\.\d+\.\d+)$/i;
 

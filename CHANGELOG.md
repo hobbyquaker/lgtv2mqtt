@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Breaking
+
+- Status payloads are `{"val", "ts", "lc"}` JSON by default (mqtt-smarthome spec 2.0, D-3 revised);
+  `--no-json-payloads` restores plain values. Home Assistant discovery adapts automatically.
+
 ## 3.0.3
 
 - mqtt-interfaces-core 0.8: the instance publishes `<name>/maintenance/stats` (memory, CPU share, event loop lag) every 60 s — `--stats-interval`, 0 = off; she shows it on the Instances tab.

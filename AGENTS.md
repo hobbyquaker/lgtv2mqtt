@@ -26,8 +26,8 @@ Topic structure is `<name>/<function>/<item>`, `<name>` is the instance name (de
   `0` = not connected to MQTT, `1` = MQTT but no TV, `2` = MQTT and TV (paired).
 - `<name>/status/<item>` — retained state reports, friendly snake_case items (`power`,
   `volume`, `mute`, `sound_output`, `input`, `input_list`, `app`, `app_list`, `channel`,
-  `channel_name`, `play_state`, `screen`, `model`, `firmware`, `mac`). Plain values by
-  default, `{val, ts, lc}` JSON with `--json-payloads`. Lists are JSON arrays.
+  `channel_name`, `play_state`, `screen`, `model`, `firmware`, `mac`). `{val, ts, lc}` JSON by
+  default, plain values with `--no-json-payloads`. Lists are JSON arrays.
 - `<name>/set/<item>` — commands, same item names plus set-only items (`volume_up`, `media`,
   `toast`, `button`, `text`, ...). Plain values; `{"val": ...}` JSON is accepted too.
   `<name>/set/<service>/<method>` is a raw SSAP passthrough, **off by default** (`--raw-set`).

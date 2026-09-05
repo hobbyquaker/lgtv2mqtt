@@ -48,7 +48,7 @@ variable (`LGTV2MQTT_TV`, `LGTV2MQTT_MQTT_URL`, `LGTV2MQTT_NAME`, ...).
 | `-u, --mqtt-url`                     | `mqtt://localhost` | broker URL, see [MQTT.js](https://github.com/mqttjs/MQTT.js#connect-using-a-url)             |
 | `--mqtt-username`, `--mqtt-password` |                    | broker credentials                                                                           |
 | `-n, --name`                         | `lgtv`             | instance name, used as topic prefix                                                          |
-| `--json-payloads`                    | off                | publish status as `{"val", "ts", "lc"}` JSON instead of plain values                         |
+| `--json-payloads`                    | on                 | status as `{"val", "ts", "lc"}` JSON; `--no-json-payloads` for plain values                  |
 | `--ha-discovery`                     | on                 | Home Assistant MQTT discovery (`--no-ha-discovery` disables and clears it)                   |
 | `--ha-prefix`                        | `homeassistant`    | discovery prefix                                                                             |
 | `--raw-set`                          | off                | accept raw SSAP requests on `set/<service>/<method>` (see below)                             |
@@ -106,8 +106,8 @@ not to the TV (off, standby or not paired), `2` = connected to both.
 
 ### `<name>/status/<item>`
 
-Retained status reports (plain values; lists as JSON). With `--json-payloads` every status is
-`{"val": <value>, "ts": <ms received>, "lc": <ms last changed>}`.
+Retained status reports. Every status is `{"val": <value>, "ts": <ms received>, "lc": <ms last changed>}`
+(mqtt-smarthome); with `--no-json-payloads` the plain value is published instead (lists as JSON).
 
 | item           | type   | set | notes                                                                                               |
 | -------------- | ------ | --- | --------------------------------------------------------------------------------------------------- |
