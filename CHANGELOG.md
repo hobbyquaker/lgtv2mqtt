@@ -1,11 +1,16 @@
 # Changelog
 
-## Unreleased
+## 3.0.4
+
+- lgtv2 2.0.1: pairing on webOS 26, which rejects the signed manifest with
+  `403 Pairing rejected: blacklisted certificate detected` — registration is retried with an
+  unsigned manifest on that error, older TVs are unaffected (lgtv2#51, thanks @Voodoo2man).
 
 ### Breaking
 
 - Status payloads are `{"val", "ts", "lc"}` JSON by default (mqtt-smarthome spec 2.0, D-3 revised);
   `--no-json-payloads` restores plain values. Home Assistant discovery adapts automatically.
+  (Effective since 3.0.3 through mqtt-interfaces-core 0.8; documented here, discovery default aligned.)
 
 ## 3.0.3
 
