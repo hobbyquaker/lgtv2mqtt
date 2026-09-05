@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.5
+
+- lgtv2 2.0.2: the unsigned webOS 26 fallback manifest now also requests `CONTROL_INPUT_TEXT` and
+  `CONTROL_MOUSE_AND_KEYBOARD`, so remote buttons, pointer and scroll work after pairing on webOS 26
+  instead of failing with `401 insufficient permissions` (lgtv2#52, thanks @Voodoo2man).
+
 ## 3.0.4
 
 - lgtv2 2.0.1: pairing on webOS 26, which rejects the signed manifest with
