@@ -115,3 +115,27 @@ describe('commandFor', () => {
         }
     });
 });
+
+describe('#20: an external input can be launched like an app', () => {
+    const state = {
+        get: (key) =>
+            ({
+                app_list: [{id: 'netflix', title: 'Netflix'}],
+                input_list: [{id: 'HDMI_1', label: 'HDMI 1', appId: 'com.webos.app.hdmi1'}],
+            })[key],
+    };
+
+    test('by its label, its id or its app id', () => {
+        for (const value of ['HDMI 1', 'HDMI_1', 'com.webos.app.hdmi1']) {
+            assert.deepEqual(commandFor('app', value, state), {
+                type: 'request',
+                uri: 'ssap://system.launcher/launch',
+                payload: {id: 'com.webos.app.hdmi1'},
+            });
+        }
+    });
+
+    test('an app still wins over an input of the same name', () => {
+        assert.equal(commandFor('app', 'Netflix', state).payload.id, 'netflix');
+    });
+});

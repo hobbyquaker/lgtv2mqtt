@@ -52,6 +52,33 @@ describe('buildDiscovery', () => {
         assert.equal(c.model, undefined);
     });
 
+    test('#20: the external inputs are options of the app select, with their labels', () => {
+        const {payload} = discovery({
+            input_list: [
+                {id: 'HDMI_1', label: 'HDMI 1', appId: 'com.webos.app.hdmi1'},
+                {id: 'HDMI_2', label: 'HDMI 2', appId: 'com.webos.app.hdmi2'},
+                {id: 'AV_1', label: 'AV', connected: false},
+            ],
+            app_list: [{id: 'netflix', title: 'Netflix'}],
+            app: 'com.webos.app.hdmi1',
+        });
+        const select = payload.cmps.app_select;
+        // what `status/app` reports while an input is on screen has to be among the options,
+        // or Home Assistant logs "Invalid option" for it
+        assert.deepEqual(select.options, ['Netflix', 'HDMI 1', 'HDMI 2']);
+        assert.match(select.val_tpl, /"com\.webos\.app\.hdmi1":"HDMI 1"/);
+        // an input without a launch point of its own is not an app and stays out
+        assert.equal(select.options.includes('AV'), false);
+    });
+
+    test('#20: an app title and an input label that collide stay apart', () => {
+        const {payload} = discovery({
+            input_list: [{id: 'HDMI_1', label: 'Netflix', appId: 'com.webos.app.hdmi1'}],
+            app_list: [{id: 'netflix', title: 'Netflix'}],
+        });
+        assert.deepEqual(payload.cmps.app_select.options, ['Netflix', 'Netflix (com.webos.app.hdmi1)']);
+    });
+
     test('selects from learned lists, sensors from known values', () => {
         const {payload} = discovery({
             input_list: [{id: 'HDMI_1'}, {id: 'HDMI_2'}],
