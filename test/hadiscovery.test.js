@@ -23,7 +23,10 @@ describe('buildDiscovery', () => {
         });
         assert.deepEqual(payload.o, {name: 'lgtv2mqtt', sw: '2.0.0', url: pkg.homepage});
         assert.equal(payload.avty[0].t, 'lgtv/connected');
-        assert.match(payload.avty[0].avty_tpl, />= 2/);
+        // #20: the template of an entry of an availability list is `val_tpl`; `avty_tpl` made
+        // Home Assistant refuse the whole device payload (mqtt-interfaces-core 0.15.2)
+        assert.equal(payload.avty[0].avty_tpl, undefined);
+        assert.match(payload.avty[0].val_tpl, />= 2/);
     });
 
     test('always present entities and their topics', () => {
@@ -34,7 +37,7 @@ describe('buildDiscovery', () => {
         assert.equal(c.power_switch.stat_t, 'lgtv/status/power');
         assert.match(c.power_switch.val_tpl, /screen_off/);
         // the power switch must be usable while the tv is off
-        assert.match(c.power_switch.avty[0].avty_tpl, />= 1/);
+        assert.match(c.power_switch.avty[0].val_tpl, />= 1/);
         assert.equal(c.volume.p, 'number');
         assert.equal(c.volume.max, 100);
         assert.equal(c.mute.pl_on, 'true');

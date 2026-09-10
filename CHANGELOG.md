@@ -1,5 +1,20 @@
 # Changelog
 
+## 3.0.6
+
+- **Home Assistant refused the whole device** ([#20](https://github.com/hobbyquaker/lgtv2mqtt/issues/20),
+  thanks @daviddu26). The availability entries of the discovery payload carried `avty_tpl`, which
+  expands to `availability_template` — a key Home Assistant's schema for an entry of an
+  `availability` list does not allow (there the template is `val_tpl`). Since the device payload is
+  validated as a whole, HA logged "Invalid MQTT device discovery payload" and created nothing of the
+  device. Fixed in `mqtt-interfaces-core` 0.15.2, which this release brings in — with everything
+  else that landed in the core since 0.8: device discovery (`--discover`), a config schema for
+  management UIs, the installer's hardening, and the fixes of 0.11 to 0.15.1.
+- **The external inputs are options of the app select** (#20, side note). On webOS an input is a
+  launch point of its own, so `status/app` reports `com.webos.app.hdmi1` while an input is on
+  screen — an id the select's options did not hold, and Home Assistant logged "Invalid option" for
+  it. The inputs are in the list now, by their labels, and selecting one switches to it.
+
 ## 3.0.5
 
 - lgtv2 2.0.2: the unsigned webOS 26 fallback manifest now also requests `CONTROL_INPUT_TEXT` and

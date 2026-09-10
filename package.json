@@ -1,6 +1,6 @@
 {
   "name": "lgtv2mqtt",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "Interface between LG webOS Smart TVs and MQTT",
   "type": "module",
   "main": "index.js",
@@ -58,7 +58,7 @@
   },
   "dependencies": {
     "lgtv2": "^2.0.2",
-    "mqtt-interfaces-core": "^0.8.0"
+    "mqtt-interfaces-core": "^0.15.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",
