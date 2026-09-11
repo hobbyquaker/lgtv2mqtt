@@ -9,4 +9,5 @@
 
 ## Project docs
 
-- See ROADMAP.md for analysis, decisions (T-n) and next steps; the fleet-wide plan lives in ../lgsb2mqtt/ROADMAP.md.
+- The roadmap (analysis, decisions T-n, open questions, next steps) is kept in the maintainer's agents repository,
+  checked out as `~/repos/she-agent/roadmap-items/lgtv2mqtt/`; the fleet-wide plan is `~/repos/she-agent/roadmap-readmes/mqtt-interfaces.md`.

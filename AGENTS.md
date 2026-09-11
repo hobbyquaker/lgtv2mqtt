@@ -11,9 +11,10 @@ Home Assistant via MQTT discovery.
 It is one of many `xyz2mqtt` adapters by the same author (lgsb2mqtt, airtunes2mqtt,
 bravia2mqtt, hue2mqtt.js, hm2mqtt.js, ...). All follow the
 [mqtt-smarthome](https://github.com/mqtt-smarthome/mqtt-smarthome) architecture.
-Consistency with that convention and with the sibling adapters is a hard requirement — see
-ROADMAP.md for the ongoing modernization/unification effort (the fleet-wide plan lives in
-the lgsb2mqtt ROADMAP). lgsb2mqtt 1.0 and lgtv2mqtt 2.0 share the same layout (config, topics,
+Consistency with that convention and with the sibling adapters is a hard requirement. The
+roadmap (analysis, decisions T-n, open questions, next steps) is kept in the maintainer's agents
+repository, checked out next to this one as `../../she-agent/roadmap-items/lgtv2mqtt/`; the fleet-wide plan is
+`../../she-agent/roadmap-readmes/mqtt-interfaces.md`. lgsb2mqtt 1.0 and lgtv2mqtt 2.0 share the same layout (config, topics,
 discovery, install); keep them aligned. When in doubt, prefer the fleet-wide standard over a
 local quick fix.
 
@@ -33,7 +34,7 @@ Topic structure is `<name>/<function>/<item>`, `<name>` is the instance name (de
   `<name>/set/<service>/<method>` is a raw SSAP passthrough, **off by default** (`--raw-set`).
 - `<name>/info` — retained JSON about the running instance.
 
-QoS 0 everywhere. Do not rename topics outside of a major release (see ROADMAP.md);
+QoS 0 everywhere. Do not rename topics outside of a major release (see the roadmap);
 the 1.x → 2.0 migration table is in CHANGELOG.md.
 
 ## Code layout (ES modules, node >= 20.19)
