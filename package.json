@@ -57,8 +57,8 @@
     "serviceExtra": []
   },
   "dependencies": {
-    "lgtv2": "^2.0.2",
-    "mqtt-interfaces-core": "^0.15.2"
+    "lgtv2": "^2.1.0",
+    "mqtt-interfaces-core": "^0.17.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.0.0",

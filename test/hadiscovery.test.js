@@ -1,6 +1,8 @@
 import {test, describe} from 'node:test';
 import assert from 'node:assert/strict';
 
+import {VALUE_TEMPLATE} from 'mqtt-interfaces-core/hadiscovery';
+
 import {buildDiscovery} from '../lib/hadiscovery.js';
 
 const pkg = {name: 'lgtv2mqtt', version: '2.0.0', homepage: 'https://github.com/hobbyquaker/lgtv2mqtt'};
@@ -106,7 +108,14 @@ describe('buildDiscovery', () => {
 
     test('json payloads use value templates', () => {
         const {payload} = discovery({app_list: [{id: 'a', title: 'A'}]}, {jsonPayloads: true});
-        assert.equal(payload.cmps.volume.val_tpl, '{{ value_json.val }}');
+        assert.equal(payload.cmps.volume.val_tpl, VALUE_TEMPLATE);
+        // #21: mute and screen are JSON booleans; the core's template renders them as true/false,
+        // as their stat_on/stat_off spell it (Python's True/False never matched)
+        for (const sw of ['mute', 'screen']) {
+            assert.equal(payload.cmps[sw].val_tpl, VALUE_TEMPLATE);
+            assert.equal(payload.cmps[sw].stat_on, 'true');
+            assert.equal(payload.cmps[sw].stat_off, 'false');
+        }
         assert.match(payload.cmps.power_switch.val_tpl, /value_json\.val/);
         assert.match(payload.cmps.app_select.val_tpl, /value_json\.val/);
         assert.equal(payload.cmps.toast.val_tpl, undefined);
