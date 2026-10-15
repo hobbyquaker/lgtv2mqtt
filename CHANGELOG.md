@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.7
+
+- **The Mute and Screen switches stayed unknown in Home Assistant**
+  ([#21](https://github.com/hobbyquaker/lgtv2mqtt/issues/21), reported and diagnosed by
+  @daviddu26 — thank you!). Their status is a JSON boolean, and the default state template
+  `{{ value_json.val }}` rendered it as Python's `False` / `True`, which never matched the switch's
+  `stat_on: 'true'` / `stat_off: 'false'`. Fixed in `mqtt-interfaces-core` 0.17.1, which this
+  release brings in: the template renders a boolean as `true` / `false`. The availability part of
+  #21 was already fixed in 3.0.6 (the report was on 3.0.5).
+- `mqtt-interfaces-core` 0.17.1 also brings 0.16 and 0.17: availability entries wait for their
+  item's value; lgtv2mqtt's own availability (`<name>/connected`) is not affected.
+- `lgtv2` 2.1.0: on a first pairing the new key is saved before `connect` fires.
+
 ## 3.0.6
 
 - **Home Assistant refused the whole device** ([#20](https://github.com/hobbyquaker/lgtv2mqtt/issues/20),
